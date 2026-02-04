@@ -129,6 +129,25 @@ For web fetching, the Asana and Notion results for that board are huge, and ends
 - Do not include Asana's custom_fields in the first pass. Only do it once you have the tasks in memory, and fetch it task by task. Use a separate subagent to get custom_fields for each task.
 - When loading the roadmap from Notion's, fetch only the current quarter. Search for this year, the quarter respective to the month you are reporting (e.g Q1 for Jan-Mar; Q2 for Apr-Jun etc) in the first pass. Fetch one doc at a time to avoid filling up the context window, and do it in separate subagents.
 
+### Fetching task activity for staleness detection
+
+For tasks that look potentially stale (created 2+ months before completion, or notes referencing old events), fetch the task's stories using `asana_get_stories_for_task` to check when real work happened:
+
+- Stories include PR links, comments, assignee changes, and status updates
+- Look for the last substantive activity *before* the completion event
+- If the last PR or meaningful comment was months before completion, flag as stale
+- Use a subagent for this to avoid bloating the main context
+
+Example subagent prompt:
+```
+Fetch stories for Asana task {task_id} using asana_get_stories_for_task.
+Look for the most recent:
+1. GitHub PR link (usually contains "github.com" in the text)
+2. Substantive comment (not just status changes)
+Report the date of the last real activity before the task was marked complete.
+If the last real activity was more than 4 weeks before completion, flag as "likely stale closure."
+```
+
 ## Generating the report
 
 ### Evidence list first
@@ -168,9 +187,20 @@ Notice there's a little bit of humor in the template to keep it a light touch bu
 
 Detection:
 - Check if the task's subject/description matches items already mentioned in the previous month's report
-- Look at task activity history; if significant work happened in prior months, the task closure may just be administrative cleanup
+- **Check the task's stories/comments for activity gaps**: Asana shows PR links, comments, and status changes as "stories." If the last substantive activity (PR merged, meaningful comment) was weeks or months before the completion date, the task was likely just administratively closed. The completion itself shows as a story, so look at what came *before* it.
+  - Example: Last PR linked in September, task marked complete in January = stale closure
+  - Example: PR linked yesterday, task marked complete today = real work this month
+- **Compare created_at vs completed_at as a secondary signal**: A gap of 2+ months can indicate staleness, but activity history is more reliable since some tasks legitimately take months
+- **Check task notes for past date references**: If the notes mention a postmortem, incident, or event from months ago (e.g. "08-01-25" in a task closed in January 2026), the actual work likely happened back then
 
 Handling:
 - **Exclude entirely** if the work was fully reported in a previous month (e.g., "Galileo anomaly alerts" closed in January but shipped and reported in December)
+- **Exclude entirely** if the task was created months ago and just administratively closed now (e.g., postmortem action items where the fix shipped immediately)
 - **Mention as "finalized" or "wrapped up"** only if there was meaningful additional work this month beyond the original delivery
-- **Note gray areas** in the evidence list with a "?" marker and a note like "Possibly reported last month" so the user can decide
+- **Note gray areas** in the evidence list with a "?" marker and a note like "Possibly reported last month" or "Stale task, work done months ago" so the user can decide
+
+Example of a stale task to exclude:
+- Task: "Prepaid cards E2E tests"
+- Created: August 2025 (after a postmortem)
+- Completed: January 2026
+- Why exclude: 5-month gap, notes reference August postmortem. The tests were written in August; the task was just closed now as cleanup.

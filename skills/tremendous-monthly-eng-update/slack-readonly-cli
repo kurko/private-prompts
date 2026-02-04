@@ -165,7 +165,7 @@ cmd_user() {
 Usage: $0 user <user_id_or_email>
 
 Examples:
-  $0 user U03P2CAUKMG
+  $0 user U02P3CWUKMG
   $0 user alice@example.com"
   fi
 
