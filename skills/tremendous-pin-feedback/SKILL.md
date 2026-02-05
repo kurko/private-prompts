@@ -53,6 +53,30 @@ The `SLACK_BOT_TOKEN` is available in the environment (sourced from `~/.secrets`
 
 Response includes `messages.matches[]` with `permalink`, `text`, `user`, `ts`, and `channel`.
 
+## Context Gathering
+
+When reading the source content, extract and note:
+
+### Project/Feature Name
+Identify the project or feature name from:
+- Slack: channel name (especially `#project-*` channels, e.g., `#project-wallet` → "Wallet"), thread topic, or explicit project mentions in the message text
+- Asana: task name or project name
+- GitHub PR: repository name or PR title
+- The content itself (look for project names, feature names, or initiative titles)
+
+This name **must** appear in the first sentence of the feedback to provide future context.
+
+### Interactions from Others
+When reading threads, comments, or replies (Slack, Asana, GitHub, Jira, Linear, etc.), note responses from others that add substance.
+
+A reply is **substantive** if it describes an impact, asks a question, or adds new information. Encouragement-only replies ("great job", "keep it up", "love it", "thanks for the update") should be ignored.
+
+- ✅ Include: feedback that describes impact ("this helped me plan X"), questions that show engagement, additional context or information
+- ❌ Ignore: simple "thank you" or encouragement messages, especially from Alex Oliveira, unless they add specific context
+- ❌ Ignore: emoji reactions alone
+
+If substantive interactions exist, summarize them at the end of the feedback (e.g., "In this case, John Doe noted that the update helped them plan their work accordingly.").
+
 ## Career Ladder Context
 
 Before writing feedback, spawn an Explore subagent to read the career ladder at:
@@ -76,11 +100,13 @@ later in the year.
 
 ### Rules
 - Don't use their name, instead write it in the second person (You)
+- **Always include the project/feature name in the first sentence** to provide context for future reading (e.g., "Your work on the Payments Integration project..." or "This message in the Rewards API project...")
 - When writing feedback, avoid making specific assumptions about implementation details that aren't explicitly stated.
 - Use general language for technical work (e.g., 'submitted clean code' rather than 'submitted a pull request', or 'delivered the feature' rather than 'opened PRs') unless I have provided those specific details.
 - Keep the tone professional but warm, not overly formal. I mean, just write like I would.
 - For positive feedback, let's tone down words like "excellent", unless I mention it. I don't want it to denote perfection.
 - Use professional language suitable for perf reviews
+- **If others provided substantive feedback in the thread**, add a sentence at the end summarizing their input (e.g., "Notably, Jane mentioned this helped her plan the QA timeline.")
 
 ### Input
 The user will provide key focus areas:
@@ -122,7 +148,7 @@ The script automatically adds the current timestamp.
 
 ```bash
 ~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-feedback.sh \
-  "[Positive; P5] When the payment integration started failing in production, Sarah quickly identified the root cause in the vendor's API change and implemented a backwards-compatible fix within an hour. Her debugging approach was methodical and she kept the team informed throughout." \
+  "[Positive; P5] Your project update on the Apple / Google Wallet integration is a good example of the improvement in how you communicate status to the team. The message is clear about where things stand with both vendors, with context that helps everyone understand quickly what's happening (like 'we're just middle man here'). This consistent, frequent communication style makes it easy for the whole team to stay informed without needing to ask. Notably, Jane mentioned that the update helped her plan the QA timeline for next sprint." \
   "sarah" \
   "https://tremendous-rewards.slack.com/archives/C01234/p1234567890"
 ```
