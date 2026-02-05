@@ -24,6 +24,28 @@ for f in "$SCRIPT_DIR"/agents/*; do
   [ -e "$f" ] && ln -nfs "$f" ~/.claude/agents/
 done
 
+# Add bin to PATH in shell profile (idempotent)
+PATH_MARKER="# private-prompts bin"
+PATH_LINE="export PATH=\"\$HOME/.private-prompts/bin:\$PATH\" $PATH_MARKER"
+
+# Determine shell profile
+if [ -n "${ZSH_VERSION:-}" ] || [ "$SHELL" = "/bin/zsh" ]; then
+  PROFILE="$HOME/.zshrc"
+else
+  PROFILE="$HOME/.bash_profile"
+fi
+
+# Add PATH entry if not already present
+if ! grep -q "$PATH_MARKER" "$PROFILE" 2>/dev/null; then
+  echo "" >> "$PROFILE"
+  echo "$PATH_LINE" >> "$PROFILE"
+  echo "Added ~/.private-prompts/bin to PATH in $PROFILE"
+  echo "Run 'source $PROFILE' or start a new terminal to use the updated PATH."
+else
+  echo "PATH already configured in $PROFILE"
+fi
+
+echo ""
 echo "Private prompts installed at ~/.private-prompts"
 echo "Symlinks created in ~/.claude/{commands,skills,agents}"
 echo ""

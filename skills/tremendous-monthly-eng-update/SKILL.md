@@ -65,10 +65,10 @@ I wrote the one above after checking Asana and understanding the overall context
         - #project-galileo* (Galileo is a vendor)
         - #project-intl-payouts
         - #tremendous-releases (for launch announcements; only reference messages that match a task or project on the team's Asana board, or that mention the Catalog team)
-    - **CLI tool**: Use `./slack-readonly-cli` in this skill directory for operations the MCP doesn't support well:
-        - `./slack-readonly-cli search "query"` - Search messages (supports `in:#channel`, `from:@user`, `after:YYYY-MM-DD`)
-        - `./slack-readonly-cli user U03P2CAUKMG` - Look up user info
-        - `./slack-readonly-cli channels "project-*"` - List channels matching a pattern
+    - **CLI tool**: Use `slack-readonly-cli` for operations the MCP doesn't support well:
+        - `slack-readonly-cli search "query"` - Search messages (supports `in:#channel`, `from:@user`, `after:YYYY-MM-DD`)
+        - `slack-readonly-cli user U03P2CAUKMG` - Look up user info
+        - `slack-readonly-cli channels "project-*"` - List channels matching a pattern
     - If you need a Slack operation not covered by the CLI, suggest adding it to `slack-readonly-cli` rather than writing ad-hoc scripts
 
 ## Rules
