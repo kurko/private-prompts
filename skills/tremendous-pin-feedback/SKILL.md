@@ -21,9 +21,10 @@ The only write operation this skill performs is posting to the Google Sheet.
 1. **Validate input** - If no URL and no description is provided in the arguments, stop immediately and ask the user to provide at least one.
 2. **Get the source URL** from the user (Slack thread, Github PR, Asana task, Jira, Notion document and more)
 3. **Fetch the content** using an available CLI (e.g gh) or MCP tools (see Slack fallback below)
-4. **Identify the team member** being highlighted
-5. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
-6. **Post to the sheet** using the script
+4. **Follow linked URLs** found in the content to gather deeper context (see Deep Link Traversal below)
+5. **Resolve the team member's full name** (see Member Name Resolution below)
+6. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
+7. **Post to the sheet** using the script
 
 ## Fetching Slack Content
 
@@ -53,9 +54,47 @@ The `SLACK_BOT_TOKEN` is available in the environment (sourced from `~/.secrets`
 
 Response includes `messages.matches[]` with `permalink`, `text`, `user`, `ts`, and `channel`.
 
+## Deep Link Traversal
+
+After fetching the primary source, **scan the content for linked URLs** and follow them to build richer context. This is critical for writing high-quality feedback — a Slack message alone rarely tells the full story.
+
+### How it works
+
+1. **Fetch the primary source** (e.g., a Slack thread).
+2. **Scan the fetched content** for URLs pointing to other systems: GitHub PRs, Asana tasks, Notion pages, Jira tickets, other Slack threads, etc.
+3. **Follow each link using a subagent.** Spawn a `general-purpose` subagent for each linked URL. Give the subagent a clear, specific prompt so it returns exactly what you need.
+4. **Follow transitive links.** If a GitHub PR description links to an Asana task, the subagent MUST follow that link too. Common chains:
+   - Slack thread → GitHub PR → Asana task (linked in PR description)
+   - Slack thread → Asana task → subtasks or related tasks
+   - Asana task → GitHub PR (linked in comments)
+
+### Subagent prompt template for link traversal
+
+When spawning subagents to follow links, use a prompt like:
+
+```
+Fetch the content at [URL] and return:
+1. **Who** did the work (full name of the author/assignee)
+2. **What** was done (summary of the change, task, or discussion)
+3. **Impact** — any mentions of why this matters, who it unblocks, or what problem it solves
+4. **Linked URLs** — any URLs in the content that point to other systems (GitHub, Asana, Slack, etc.) that I should also follow for more context
+
+For GitHub PRs: read the PR title, description, and linked issues/tasks. Check for Asana/Linear/Jira links in the description.
+For Asana tasks: read the task name, description, and comments. Note the assignee and any subtasks.
+For Slack threads: read all replies and note substantive interactions.
+
+Be concise. Return facts, not opinions.
+```
+
+### What NOT to follow
+
+- Links to dashboards, monitoring, or documentation (unless they describe the work done)
+- Links to CI/CD runs or deployment logs
+- External links (vendor docs, blog posts, etc.)
+
 ## Context Gathering
 
-When reading the source content, extract and note:
+When reading the source content (including content from followed links), extract and note:
 
 ### Project/Feature Name
 Identify the project or feature name from:
@@ -99,7 +138,8 @@ Why are we doing this? This snippet will be used to write their cycle review
 later in the year.
 
 ### Rules
-- Don't use their name, instead write it in the second person (You)
+- Don't use the recipient's name, instead write it in the second person (You)
+- **Write from the first person perspective ("I").** These feedback snippets will be copied into perf review documents written by the user. Any reference to the user's own observations, praise, or context should use "I" (e.g., "I noticed your improvement in..." not "Alex noticed your improvement in..."). Never refer to the user by name in the third person.
 - **Always include the project/feature name in the first sentence** to provide context for future reading (e.g., "Your work on the Payments Integration project..." or "This message in the Rewards API project...")
 - When writing feedback, avoid making specific assumptions about implementation details that aren't explicitly stated.
 - Use general language for technical work (e.g., 'submitted clean code' rather than 'submitted a pull request', or 'delivered the feature' rather than 'opened PRs') unless I have provided those specific details.
@@ -111,7 +151,7 @@ later in the year.
 ### Input
 The user will provide key focus areas:
 
-- [Person's name]: if not provided, you can fallback/rely on the URL's authorship
+- [Person's name]: a hint only (often dictated via voice, may be first name only). You MUST always resolve the full name from the source — see Member Name Resolution below.
 - [What they did / context]:
     - If provided, make those areas more prominent
     - If not provided and it's self evident, you can come up with your own feedback, positive or negative.
@@ -139,16 +179,29 @@ Use the included script (same directory as skill):
 
 Arguments:
 - `note`: The feedback text (1-2 paragraphs). Make sure to escape quotes.
-- `member-name`: Team member's name (lowercase, matches Slack display name)
+- `member-name`: The team member's full name, lowercased (see Member Name Resolution below)
 - `url`: Source URL (Slack thread or Asana task)
 
 The script automatically adds the current timestamp.
+
+## Member Name Resolution
+
+**This is critical. The `member-name` MUST always be the person's full name (first + last), lowercased. Never use a first name alone — it is ambiguous (e.g., there are multiple Victors on the team).**
+
+Resolution rules:
+1. **Always resolve the full name from the source**, regardless of what the user says. The user's input (often dictated via voice) may mention a first name only — this is a hint, not the final answer. You MUST cross-reference against the source (Slack profile, Asana user, GitHub author) to get the full name.
+   - **Slack**: Call `mcp__slack__slack_get_user_profile` with the user ID. Use the `real_name` field (it always contains the full name). Do NOT use `display_name` — it may be a first name only.
+   - **Asana**: The API returns the user's full name in `created_by.name`.
+   - **GitHub**: Use the commit author or PR author's full name.
+2. **If the source doesn't resolve a full name** (e.g., no URL provided, or the API only returns a first name), and you cannot determine the last name from context, append a flag: e.g., `"victor [last name unclear]"`. Never silently use a first name alone.
+3. **Final format**: lowercase the full name. Examples: `"victor antoniazzi"`, `"sarah johnson"`, `"vinicius barboza"`.
+4. **Never abbreviate, shorten, or use nicknames.** The sheet uses full names to identify people.
 
 ## Example
 
 ```bash
 ~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-feedback.sh \
   "[Positive; P5] Your project update on the Apple / Google Wallet integration is a good example of the improvement in how you communicate status to the team. The message is clear about where things stand with both vendors, with context that helps everyone understand quickly what's happening (like 'we're just middle man here'). This consistent, frequent communication style makes it easy for the whole team to stay informed without needing to ask. Notably, Jane mentioned that the update helped her plan the QA timeline for next sprint." \
-  "sarah" \
+  "sarah johnson" \
   "https://tremendous-rewards.slack.com/archives/C01234/p1234567890"
 ```

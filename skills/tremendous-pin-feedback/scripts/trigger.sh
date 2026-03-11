@@ -66,7 +66,7 @@ fi
 # Pre-approved tools for this workflow
 # Note: no whitespace/newlines - claude parses these strictly
 # IMPORTANT: Slack tools are READ-ONLY - no post_message, reply_to_thread, or add_reaction
-ALLOWED_TOOLS="Read(*),mcp__slack__slack_get_thread_replies,mcp__slack__slack_get_channel_history,mcp__slack__slack_get_users,mcp__slack__slack_get_user_profile,mcp__asana__asana_get_task,mcp__asana__asana_get_stories_for_task,mcp__asana__asana_typeahead_search,Bash(gh:*),Bash(curl*https://slack.com/api/search*),Bash(${SKILL_DIR}/scripts/post-feedback.sh:*),Bash(~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-feedback.sh:*)"
+ALLOWED_TOOLS="Agent,Read(*),mcp__slack__slack_get_thread_replies,mcp__slack__slack_get_channel_history,mcp__slack__slack_get_users,mcp__slack__slack_get_user_profile,mcp__asana__asana_get_task,mcp__asana__asana_get_stories_for_task,mcp__asana__asana_typeahead_search,Bash(gh:*),Bash(curl*https://slack.com/api/search*),Bash(${SKILL_DIR}/scripts/post-feedback.sh:*),Bash(~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-feedback.sh:*)"
 
 # Run from a project directory that has MCP plugins configured
 cd ~/work/core
