@@ -55,7 +55,55 @@ Skip questions the user already answered in their input.
 
 4. Attempt to access the vendor docs URL via WebFetch.
    - If docs are inaccessible (auth required, paywall, PDF-only): flag it, ask the user if they can provide content manually, continue with whatever is available.
-   - **SPA detection**: If WebFetch returns mostly JavaScript, empty body, or a page that says "enable JavaScript" with minimal actual content, flag the page as "SPA-rendered, content not accessible via WebFetch." Record which pages were affected. This is a documentation quality finding (Concern) and means some findings may have lower confidence.
+   - **SPA detection**: If WebFetch returns mostly JavaScript, empty body, or a page that says "enable JavaScript" with minimal actual content, attempt the Rendering Fallback Chain (see "WebFetch SPA Detection and Rendering Fallback" in Sub-Agent Rules). Record which rendering method succeeded. If all methods fail, flag as inaccessible and ask the user if they can provide content manually.
+
+### Step 0.5: Sitemap and Page Discovery
+
+Before spawning domain investigators, spawn a **Sitemap Discovery Agent** to build a page inventory. This is a blocking step — all sub-agents need the inventory before starting.
+
+```
+You are discovering available documentation pages for [Vendor]. Your goal is to build a comprehensive
+inventory of doc pages so that investigation agents know WHERE to look.
+
+RENDERING NOTE: [Include if SPA was detected: "[domain] is SPA-rendered. Use [method] for all URLs."]
+
+1. Fetch the main docs page (via rendering service if SPA) and extract ALL internal links from the content.
+2. Check common sitemap locations:
+   - [docs-url]/sitemap.xml
+   - [docs-url]/docs/sitemap.xml
+   - [base-domain]/sitemap.xml
+   - [base-domain]/robots.txt (look for Sitemap: directives)
+3. Check for OpenAPI/Swagger spec at common paths:
+   - [docs-url]/openapi.json, /openapi.yaml, /swagger.json
+   - [base-domain]/api/openapi.json, /api/swagger.json
+   - [base-domain]/.well-known/openapi.json
+4. Check developer subdomains:
+   - developer.[vendor-domain], api.[vendor-domain], docs.[vendor-domain]
+5. From the links discovered in steps 1-4, identify the top 5-10 most promising secondary pages
+   (API reference, guides, webhooks, authentication, changelog) and fetch them to discover deeper links.
+
+OUTPUT a categorized page inventory:
+- **API Reference pages**: [URLs]
+- **Authentication / Security pages**: [URLs]
+- **Webhook / Event pages**: [URLs]
+- **Guide / Tutorial pages**: [URLs]
+- **Changelog / Versioning pages**: [URLs]
+- **Compliance / KYC / KYB pages**: [URLs]
+- **Sandbox / Testing pages**: [URLs]
+- **OpenAPI/Swagger spec**: [URL if found]
+- **Other relevant pages**: [URLs]
+
+For each URL, note:
+- Content Quality Grade (Direct / Rendered / Inaccessible)
+- Brief description of what the page covers (1 line)
+```
+
+The resulting `PAGE INVENTORY` is passed to ALL sub-agents in their prompts so they know where to look. Include it in each sub-agent prompt as:
+
+```
+PAGE INVENTORY (discovered pages for this vendor — check these for your domain):
+[paste categorized inventory here]
+```
 
 ### Step 1: Load Configuration
 
@@ -103,28 +151,95 @@ The orchestrator will review all escalations. Do not silently deviate from the c
 
 ### Confidence Indicator
 
-Every finding MUST include a confidence level:
-- **High**: Direct quote or explicit documentation found. You can link to the exact page.
-- **Medium**: Inferred from related documentation, error codes, or indirect evidence.
-- **Low**: Based on absence of documentation, a single indirect reference, or a page that was SPA-rendered and couldn't be fully accessed.
+Every finding MUST include a confidence level, tied to the Content Quality Grade of the source page:
+- **High**: Direct quote or explicit documentation found from a **Direct** or **Browser-Extracted** source. You can link to the exact page.
+- **Medium**: Inferred from related documentation, error codes, or indirect evidence. Also the maximum confidence for findings from **Rendered** sources (markdown.new / defuddle.md) unless corroborated by a Direct source.
+- **Low**: Based on absence of documentation, a single indirect reference, or a page graded **Inaccessible**.
+
+Confidence CANNOT be High if the source page was accessed via a rendering service (Rendered grade) — unless the same information is corroborated by a Direct or Browser-Extracted source.
 
 ### Evidence Trail
 
 For every finding, document:
 1. Which URLs you WebFetched
-2. What you found (quote the relevant text when possible)
-3. How you arrived at the tier (your reasoning chain)
-4. If a page was inaccessible or SPA-rendered, say so explicitly
+2. **Rendering method used**: Direct WebFetch / markdown.new / defuddle.md / agent-browser
+3. **Content Quality Grade**: Direct / Rendered / Browser-Extracted / Inaccessible
+4. What you found (quote the relevant text when possible)
+5. How you arrived at the tier (your reasoning chain)
+6. **Finding classification** (when a feature is not found): "Confirmed absent" / "Not found — degraded source" / "Not found — page inaccessible"
 
 This evidence trail is included in the agent's output and will be used by the verification layer.
 
-### WebFetch SPA Detection
+### Inline Source Links
 
-After every WebFetch call, check the response:
-- If the body is <500 characters of actual content, or contains "enable JavaScript", "Loading...", or is mostly `<script>` tags: mark the page as **SPA-rendered / inaccessible**
-- Record this in your output: "Page [URL] was SPA-rendered and returned no usable content"
-- Lower your confidence on any finding that depended on this page
-- The orchestrator will aggregate SPA-blocked pages as a Documentation Quality finding
+Every factual claim in sub-agent output MUST include a short inline markdown link at the end of the claim it supports. The orchestrator preserves these links when assembling the final report.
+
+**Format rules:**
+- Place the link at the **end** of the claim: `"Idempotency keys are supported ([source](url))"` or `"Supports cursor pagination ([API reference](url))"`
+- Link text should be short (1-5 words): `[source](url)`, `[API reference](url)`, `[webhooks guide](url)`, `[documentation](url)`
+- **Never start a paragraph or sentence with a link.** The link always goes after the claim it supports.
+- For "not found" findings, link to the page that was searched: `"No idempotency mechanism found ([API reference](url))"`
+- Multiple sources: link each separately at the end: `"Supports HMAC verification and retry policies ([webhooks guide](url), [security docs](url))"`
+- Bare URLs or URL-only appendix references are not sufficient. The reader must be able to click directly from a finding to the page that supports it.
+
+### WebFetch SPA Detection and Rendering Fallback
+
+After every WebFetch call, check the response for SPA indicators:
+- Body has <500 characters of actual content
+- Contains "enable JavaScript", "Loading...", "Please turn on JavaScript", or similar
+- Body is mostly `<script>` tags with no readable content
+- Contains empty root containers like `<div id="root"></div>` or `<div id="app"></div>`
+
+If SPA is detected, execute the **Rendering Fallback Chain** — stop at the first method that returns usable content:
+
+**Step A — markdown.new**: WebFetch `https://markdown.new/[full-vendor-url]` (append the full vendor URL including protocol as a path, e.g. `https://markdown.new/https://docs.vendor.com/api/overview`). If the response contains meaningful markdown content (>500 chars of text), use it and record rendering method as `markdown.new`.
+
+**Step B — defuddle.md**: WebFetch `https://defuddle.md/[vendor-domain-and-path]` (no protocol prefix, e.g. `https://defuddle.md/docs.vendor.com/api/overview`). If the response contains meaningful content, use it and record rendering method as `defuddle.md`.
+
+**Step C — agent-browser (critical pages or interactive content)**: Attempt this for:
+- Pages critical to the assessment (main docs page, API reference, key feature pages) where Steps A-B failed
+- Pages where Steps A-B returned content but it contains **interactive content indicators** (see below)
+
+To use agent-browser: first check if a skill called `agent-browser` exists (invoke the Skill tool with `skill: "agent-browser"`). The skill provides documentation on available commands and interaction patterns. If the skill does not exist, use the `agent-browser` CLI tool directly.
+
+Basic extraction workflow: `agent-browser open [url]` → `agent-browser snapshot` → `agent-browser get text @ref` → extract content as text.
+
+For pages with interactive elements, use `agent-browser snapshot` to identify interactive refs, then interact with them (e.g., `agent-browser select @ref "option-value"`, `agent-browser click @ref`) and snapshot again to capture the updated content.
+
+Record rendering method as `agent-browser`.
+
+**Interactive Content Indicators** — escalate to agent-browser even if Steps A-B returned content when the rendered markdown contains:
+- `<select>` elements or references to dropdowns that change page content (e.g., "Select a delivery model", "Choose your integration type")
+- Tabbed interfaces where content differs per tab (e.g., "REST / GraphQL / SDK" tabs)
+- Accordions or expandable sections that hide content behind user interaction
+- "Show more" / "Load more" patterns that gate additional content
+
+When interactive content is detected, the agent should: use agent-browser to interact with each option/tab/accordion, snapshot after each interaction, and combine all variations into the extracted content. This ensures no content is missed behind interactive elements.
+
+**Step D — Flag as truly inaccessible**: Only after Steps A-C all fail, mark the page as Inaccessible. Record: "Page [URL] could not be rendered by any method (WebFetch, markdown.new, defuddle.md, agent-browser)."
+
+**Orchestrator shortcut**: When the orchestrator discovers SPA rendering during Step 0 / Step 0.5, it tells all sub-agents which rendering method worked for that domain so they skip the direct WebFetch attempt and go straight to the working renderer. Include this in sub-agent prompts as: `RENDERING NOTE: [domain] is SPA-rendered. Use [method] directly (e.g., prepend https://markdown.new/ to all URLs for this domain).`
+
+### Content Quality Grades
+
+Every page accessed during the assessment MUST be assigned a Content Quality Grade:
+
+| Grade | Meaning | Max Confidence |
+|-------|---------|---------------|
+| **Direct** | WebFetch returned full, usable content | High |
+| **Rendered** | Content obtained via markdown.new or defuddle.md | Medium (unless corroborated by a Direct source) |
+| **Browser-Extracted** | Content obtained via agent-browser snapshot + text extraction | High (if thorough extraction) |
+| **Inaccessible** | All rendering methods failed | Low |
+
+**Finding Classification Based on Source Quality:**
+
+When a feature or capability is NOT found in the docs, sub-agents MUST classify the finding based on the source quality:
+
+- **"Confirmed absent"** — Only valid from **Direct** or **Browser-Extracted** pages where there is positive evidence of absence (e.g., a complete API reference that lists all endpoints and the feature is not among them).
+- **"Not found — degraded source"** — For **Rendered** pages. Sub-agents MUST state: _"Accessed via [markdown.new / defuddle.md], which may not capture interactive content, expandable sections, or dynamically-loaded elements. Human verification recommended at [URL]."_
+- **"Not found — page inaccessible"** — For **Inaccessible** pages. Sub-agents MUST state: _"Could not assess — page could not be rendered by any available method."_
+
+**CRITICAL RULE: Sub-agents MUST NOT say "vendor does not support X" or "confirmed absent" based on Rendered or Inaccessible sources.** These sources may be missing interactive content, tabbed sections, or dynamically-loaded elements that contain the information.
 
 ### Jargon Definition
 
@@ -178,16 +293,40 @@ VERSIONING:
 - URL vs header versioning? Deprecation policy?
 - CONCERN if: No versioning strategy
 
-For each finding, provide: Tier + Confidence (High/Medium/Low) + Evidence + Source URL + Reasoning.
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "Supports cursor pagination ([API reference](url))") + Reasoning.
 Also generate questions you could not answer from the docs, tagged as Blocker/Important/Nice-to-know.
 ```
 
-**2. Async Flow & Webhooks Agent**
+**2. Payment Flow & Webhooks Agent**
 
 ```
-You are assessing [Vendor]'s async patterns and webhook system. WebFetch their docs at [URL] and evaluate:
+You are assessing [Vendor]'s payment flow model, async patterns, and webhook system. WebFetch their docs at [URL] and evaluate:
 
 [Include Sub-Agent Rules here]
+
+PAYMENT FLOW MODEL:
+- Is the payment/payout creation API synchronous or asynchronous?
+  - Synchronous ("sync"): The POST request creates the payment AND returns the final
+    success/failure status in the same response. Common with lower-volume vendors.
+  - Asynchronous ("async"): The POST request creates the payment and returns an acknowledgment
+    (e.g., "accepted", "pending"), but the final success/failure status arrives later via
+    webhook or must be polled. Common with higher-volume vendors.
+- This is a classification, not a severity finding. Label the flow as "Sync" or "Async"
+  and explain the evidence.
+- If async: how does the final status arrive? (webhook, polling, both?)
+  CRITICAL: Tremendous never relies on webhooks alone — webhooks are unreliable. For async
+  vendors, we always implement a dual strategy: listen for webhooks AND poll the vendor's API
+  as a fallback if we don't receive a webhook within a predetermined time window. So it's
+  essential that there is a GET endpoint to retrieve a payout's current status by ID.
+  RED FLAG if: The vendor is async but provides no GET endpoint to check payout status
+  (meaning webhooks are the only way to learn the outcome).
+- If async: what is the typical latency from payout creation to final status webhook?
+  This drives UX decisions (e.g., can we show the user a result immediately, or do we
+  need a "processing" state?). Look for documented average and p95 times. If not documented,
+  generate a question for the vendor tagged as Important: "What is the average and p95 latency
+  from payout creation to final status webhook delivery?"
+- If sync: does the vendor also send webhooks for status changes after the initial response
+  (e.g., clawbacks, reversals)?
 
 ASYNC FLOW RESILIENCE:
 - Do POST requests return an ID for later retrieval?
@@ -203,7 +342,7 @@ WEBHOOK SYSTEM:
 - Delivery guarantees: at-least-once, exactly-once?
 - CONCERN if: No retry policy or signature verification documented
 
-For each finding, provide: Tier + Confidence (High/Medium/Low) + Evidence + Source URL + Reasoning.
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "Retry policy uses exponential backoff ([webhooks guide](url))") + Reasoning.
 Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
 ```
 
@@ -220,7 +359,7 @@ You are assessing [Vendor]'s authentication and security model. WebFetch their d
 - Environment separation: Separate sandbox vs production keys/endpoints?
 - Permissions/scoping: Can API keys be scoped to specific operations?
 
-For each finding, provide: Tier + Confidence (High/Medium/Low) + Evidence + Source URL + Reasoning.
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "API keys can be scoped per-endpoint ([security docs](url))") + Reasoning.
 Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
 ```
 
@@ -238,9 +377,9 @@ You are assessing [Vendor]'s API documentation quality. WebFetch their docs at [
 - Changelog: Published? How often updated?
   NOTE: A missing changelog is a CONCERN (documentation gap), not a Red Flag. It does not block integration.
 - Getting started guide: Clear onboarding path?
-- SPA rendering: Did any doc pages fail to return content via WebFetch? List all affected pages.
+- SPA rendering: Did any doc pages require the rendering fallback chain? List all affected pages with their Content Quality Grade and which rendering method was used.
 
-For each finding, provide: Tier + Confidence (High/Medium/Low) + Evidence + Source URL + Reasoning.
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "OpenAPI spec available at /api/openapi.json ([documentation](url))") + Reasoning.
 Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
 ```
 
@@ -259,7 +398,7 @@ You are assessing [Vendor]'s KYB/KYC and compliance capabilities. WebFetch their
 - Regulatory reporting: Who files SARs/STRs? Note that reporting obligations differ by jurisdiction (US FinCEN vs EU MiCA vs UK FCA). Flag if unclear, but note the jurisdictional context.
 - RED FLAG if: Manual-only onboarding with no API
 
-For each finding, provide: Tier + Confidence (High/Medium/Low) + Evidence + Source URL + Reasoning.
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "KYB requires programmatic document upload ([onboarding guide](url))") + Reasoning.
 Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
 ```
 
@@ -276,7 +415,7 @@ You are assessing [Vendor]'s sandbox and testing environment. WebFetch their doc
 - Ease of setup: Self-service or requires vendor interaction?
 - RED FLAG if: No sandbox environment at all
 
-For each finding, provide: Tier + Confidence (High/Medium/Low) + Evidence + Source URL + Reasoning.
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "Sandbox available with self-service provisioning ([testing guide](url))") + Reasoning.
 Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
 ```
 
@@ -300,13 +439,109 @@ You are scanning [Vendor]'s API docs for deal-breaker patterns. WebFetch their d
 - Unclear or absent error handling
 
 For each potential red flag found, provide:
-- What you found
+- What you found, with short inline markdown links at the end of each claim (e.g., "No idempotency on payment endpoints ([API reference](url))")
 - Why it's a concern for integration
-- Source URL
 - Confidence level (High / Medium / Low)
 - Whether you escalated from a lower baseline tier (and why)
 
 Also flag anything else that seems unusual or concerning even if not in the list above.
+```
+
+**8. Recipient Experience Agent**
+
+```
+You are assessing what the end recipient sees when they receive a payout via [Vendor].
+WebFetch their docs at [URL] and evaluate:
+
+[Include Sub-Agent Rules here]
+
+CONTEXT: Tremendous sends payouts on behalf of our customers to their recipients. Understanding
+what the recipient experiences is critical for designing our redemption flow and setting
+expectations in our product UI.
+
+DELIVERY MECHANISM:
+- How does the recipient learn they've been paid? Look for:
+  - Email notification from the vendor (like PayPal)
+  - SMS notification
+  - Funds appear directly in a bank account (ACH, wire, etc.) with no separate notification
+  - Recipient receives a URL/link to view or claim the payout (like merchant gift card links)
+  - Push notification in a vendor app/wallet
+  - Crypto sent directly to a wallet address (recipient sees it on-chain)
+- Does the vendor send the notification, or is Tremendous expected to notify the recipient?
+- Can the notification be customized or branded (e.g., include our customer's logo or message)?
+
+RECIPIENT ACTIONS REQUIRED:
+- Does the recipient need to take any action to receive the funds?
+  - Create an account or sign up with the vendor?
+  - Click a link to claim/accept?
+  - Provide additional info (bank details, KYC, etc.)?
+  - Nothing — funds arrive automatically?
+- Is there an expiration on unclaimed payouts?
+
+RECIPIENT VISIBILITY:
+- Can the recipient see the status of their payout?
+  - Tracking page or portal?
+  - Email updates on status changes?
+  - No visibility until funds arrive?
+
+If not documented, generate questions for the vendor tagged as Important:
+- "What does the recipient experience when a payout is sent? Do they receive an email/SMS,
+  or do funds simply appear?"
+- "Does the recipient need to take any action (sign up, claim, provide details) to receive
+  the payout?"
+- "Can payout notifications be customized or white-labeled?"
+
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links
+at the end of each claim (e.g., "Recipients receive an email with a claim link ([payout guide](url))").
+Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
+```
+
+**9. Reconciliation Agent**
+
+```
+You are assessing [Vendor]'s reconciliation capabilities. WebFetch their docs at [URL] and evaluate:
+
+[Include Sub-Agent Rules here]
+
+CONTEXT: After a payout is executed, the final cost may differ from what was quoted — especially
+when foreign exchange is involved. Tremendous reconciles these differences with every vendor.
+Understanding the vendor's reconciliation mechanism is critical for integration architecture.
+
+RECONCILIATION MECHANISM:
+- How does the vendor provide reconciliation data? Look for:
+  - Standard JSON API endpoints (list/search transactions with filters)
+  - CSV or file downloads via API
+  - SFTP file drops (scheduled or on-demand)
+  - Dashboard-only (manual download from a web portal)
+- Can reconciliation data be fetched programmatically, or only via manual export?
+- CONCERN if: Dashboard-only with no programmatic access
+
+DATA AVAILABLE IN RECONCILIATION:
+- What fields are included? Look for:
+  - Transaction/payout ID (linkable back to our records)
+  - Final settlement amount (the actual amount delivered, which may differ from the requested amount)
+  - FX rate applied (if currency conversion was involved)
+  - Fees charged (transaction fees, FX spread, etc.)
+  - Status/state of each transaction
+  - Timestamps (created, settled, completed, etc.)
+- CONCERN if: No way to reconcile FX differences or see the final cost vs. quoted cost
+
+TIMING & AVAILABILITY:
+- How soon after a transaction is reconciliation data available?
+  - Real-time / near-real-time via API?
+  - Next business day?
+  - Specific settlement cycle (T+1, T+2, etc.)?
+
+REPORT SCOPE & FILTERING:
+- What timeframe does each reconciliation report/file cover?
+  - Fixed window (e.g., daily file, last 30 days only)?
+  - Custom date range filtering?
+- Can you filter by date range, status, currency, or other fields?
+- CONCERN if: Fixed window with no filtering (limits ability to reconcile specific periods)
+
+For each finding, provide: Tier + Confidence + Evidence with short inline markdown links
+at the end of each claim (e.g., "Transaction reports available via SFTP daily ([settlement docs](url))").
+Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
 ```
 
 ### Step 2: Aggregation Gate (Cross-Reference Before Proceeding)
@@ -360,8 +595,8 @@ For each requirement, provide a row with:
 - Status: Supported / Partial / Unclear / Not Found
 - Tier: Red Flag / Concern / Adequate / Strong
 - Confidence: High / Medium / Low
-- Evidence: What the docs say (quote when possible)
-- Source URL (REQUIRED -- if no URL, mark as "Not found in docs")
+- Evidence: What the docs say, with short inline markdown links at the end of each claim (e.g., "Supports real-time balance updates ([card management API](url))")
+- Source: markdown link to the source page (e.g., [API Reference](url)) — if no URL, mark as "Not found in docs"
 
 ADDITIONAL REQUIREMENTS:
 If you discover capabilities or concerns not in the base requirements list, add them using the same format.
@@ -376,8 +611,9 @@ Tag each as Blocker/Important/Nice-to-know with the domain name.
 
 EVIDENCE TRAIL:
 At the end of your output, include a section listing:
-- All URLs you WebFetched
-- Which returned usable content vs SPA-rendered/empty
+- All URLs you accessed, with rendering method used (Direct WebFetch / markdown.new / defuddle.md / agent-browser)
+- Content Quality Grade for each page (Direct / Rendered / Browser-Extracted / Inaccessible)
+- Finding classification for any "not found" results (Confirmed absent / Not found — degraded source / Not found — page inaccessible)
 - Key quotes that support your findings
 ```
 
@@ -532,7 +768,7 @@ Save to a local markdown file. Ask the user where, suggesting `./ai-notes/vendor
 **Category**: [detected/specified category]
 **Mode**: Quick Assessment
 **Docs Reviewed**: [URLs]
-**SPA-Blocked Pages**: [list any pages that were inaccessible due to SPA rendering]
+**Content Sources**: [N] Direct | [N] Rendered (markdown.new/defuddle.md) | [N] Browser-Extracted | [N] Inaccessible
 
 ## Executive Summary
 [2-3 sentences. Confidence-weighted summary highlighting strengths, concerns, and blockers.]
@@ -548,7 +784,7 @@ Save to a local markdown file. Ask the user where, suggesting `./ai-notes/vendor
 
 ## API Quality
 ### Idempotency [Tier] [Confidence]
-[Finding + evidence + source URL + reasoning]
+[Finding with short inline links at the end of each claim, e.g.: "Mutation endpoints accept an `Idempotency-Key` header ([API reference](url)). Duplicate requests return the original response ([idempotency guide](url))."]
 
 ### Pagination [Tier] [Confidence]
 ...
@@ -598,8 +834,8 @@ Everything from Quick mode, PLUS:
 ### [Domain Area]
 | Requirement | Status | Tier | Confidence | Evidence | Source |
 |-------------|--------|------|------------|----------|--------|
-| [req 1] | Supported | Strong | High | [evidence quote] | [URL] |
-| [req 2] | Partial | Concern | Medium | [evidence] | [URL] |
+| [req 1] | Supported | Strong | High | [evidence quote with inline link] | [API Reference](url) |
+| [req 2] | Partial | Concern | Medium | [evidence with inline link] | [documentation](url) |
 ...
 
 #### [Sub-Domain] (if applicable)
@@ -624,11 +860,27 @@ All [N] findings verified against source documentation. No contradictions found 
 | [only include rows where verification changed something or found a contradiction] |
 
 ## Evidence Appendix
-### Pages Successfully Accessed
-[List of URLs that returned usable content]
 
-### Pages Blocked (SPA/Auth)
-[List of URLs that were inaccessible and what impact this had on findings]
+### Direct Sources (Full Content via WebFetch)
+[List of URLs that returned full content directly]
+
+### Rendered Sources (markdown.new / defuddle.md)
+[List of URLs accessed via rendering services, with which service was used]
+
+### Browser-Extracted Sources (agent-browser)
+[List of URLs accessed via agent-browser, if any]
+
+### Inaccessible Pages
+[List of URLs where all rendering methods failed, and what impact this had on findings]
+
+### Findings Requiring Human Verification
+[List of all findings classified as "Not found — degraded source" — these are findings where the feature
+was not found but the source was a Rendered page, so the absence may be due to rendering limitations.
+For each, include the URL to check manually and what to look for.]
+
+| Finding | Classification | Source URL | What to Verify |
+|---------|---------------|-----------|----------------|
+| [feature not found] | Not found — degraded source | [URL] | [Look for X in interactive elements, tabs, expandable sections] |
 ```
 
 ### Questions for the Vendor (Separate Document)
@@ -663,6 +915,72 @@ _[N] questions were answered from public documentation and removed from this lis
 _See the assessment report ([vendor]-assessment.md) for those findings._
 ```
 
+### Step 5.5: Citation Audit
+
+After generating the report and questions documents, audit every inline citation link before
+presenting the output to the user. The existing verification layer (Step 3.5) checks whether
+*findings* are accurate. This step checks whether *links* still point to content that supports
+the claims they're attached to. Vendor docs get reorganized, pages get removed, and Docusaurus
+SPAs silently redirect removed pages to the homepage instead of returning 404s.
+
+**1. Extract citations.** Parse all `[text](url)` links from both the assessment report and the
+questions document. Deduplicate by URL (many claims may cite the same page).
+
+**2. Spawn citation audit agents.** For each unique URL, spawn a sub-agent (parallel, batched
+to avoid redundant fetches). Each agent receives the URL and every claim that cites it:
+
+```
+CITATION AUDIT
+
+URL: [url]
+CLAIMS CITING THIS URL:
+1. "[surrounding sentence or bullet text]" — from section "[section name]"
+2. "[surrounding sentence or bullet text]" — from section "[section name]"
+
+Fetch the URL. Apply the standard SPA detection and rendering fallback chain
+(Direct → markdown.new → defuddle.md). Then check:
+
+1. BROKEN LINK: Does the URL return a 404, error page, or fail to load entirely?
+2. SILENT REDIRECT: Does the page load but show generic/homepage content instead of
+   the specific topic expected? (Common with Docusaurus sites that redirect removed
+   pages to the docs root.) Compare the page title and content against what the claims
+   expect to find there.
+3. CLAIM MISMATCH: For each claim, does the page content actually support it? Look for
+   the specific feature, endpoint, field, or behavior described in the claim text. A page
+   about webhooks that doesn't mention retry counts can't support a claim about "100 retries."
+
+Return one of:
+- PASS: URL loads, content supports all claims
+- BROKEN: URL returns 404 or error (include details)
+- REDIRECT: URL loads but content doesn't match expected topic (include what the page
+  actually shows)
+- MISMATCH: URL loads and topic is correct, but one or more specific claims aren't
+  supported by the page content (list which claims and why)
+
+For BROKEN and REDIRECT: search the vendor's docs site for the correct URL that covers
+the expected topic. If found, return the replacement URL.
+```
+
+**3. Process results.** For each non-PASS result:
+- **BROKEN/REDIRECT with replacement found:** update the link in the report automatically.
+- **BROKEN/REDIRECT with no replacement:** remove the inline link and append "(link removed —
+  original page no longer available)" after the claim. Downgrade confidence to Medium if it
+  was High.
+- **MISMATCH:** flag the specific claim for the orchestrator to review. The orchestrator
+  decides whether to find a better source URL, reword the claim, or downgrade confidence.
+
+**4. Add audit summary to Evidence Appendix.** Append a section to the report:
+
+```markdown
+### Citation Audit
+[N] unique URLs checked. [M] passed. [K] issues found and resolved.
+
+[If any issues were found:]
+| URL | Issue | Resolution |
+|-----|-------|------------|
+| [original url] | [Broken/Redirect/Mismatch] | [Replaced with [new url] / Link removed / Claim reworded] |
+```
+
 ### Step 6: Offer Notion Upload
 
 After the user reviews the local files:
@@ -687,6 +1005,13 @@ If yes, use `mcp__notion__notion-create-pages` to create the page with the repor
 - **Verify ALL findings.** The verification layer covers every tier (Red Flag, Concern, Adequate, Strong), not just critical findings. Adequate and Strong findings can also be hallucinated.
 - **Aggregation gate is mandatory.** After the parallel investigation phase, the orchestrator must cross-reference and reconcile before proceeding to verification or question generation.
 - **Category-aware severity.** Batch operations are only Red Flag for prepaid cards. Webhook IP whitelisting is never a question worth asking if HMAC signing exists.
+- **Rendering fallback is mandatory.** Never flag a page as inaccessible without first attempting the full rendering fallback chain (markdown.new → defuddle.md → agent-browser for critical pages). Only after all methods fail can a page be marked Inaccessible.
+- **Content Quality Grades are mandatory.** Every page accessed during the assessment must be assigned a grade (Direct / Rendered / Browser-Extracted / Inaccessible). Every finding must reference the grade of its source.
+- **Sitemap discovery runs before domain investigators.** The Sitemap Discovery Agent (Step 0.5) is a blocking step. Its page inventory must be passed to all sub-agents.
+- **Never claim "confirmed absent" from degraded sources.** Sub-agents must not say "vendor does not support X" when the source page was Rendered or Inaccessible. Use the finding classification system: "Confirmed absent" (Direct/Browser-Extracted only), "Not found — degraded source" (Rendered), or "Not found — page inaccessible" (Inaccessible).
+- **agent-browser is a last resort.** Only use agent-browser for critical pages (main docs, API reference, key feature pages) when both markdown.new and defuddle.md fail. It is slow and resource-intensive.
+- **Citation audit is mandatory.** Every link in the final report must be verified before presenting to the user. Silent redirects (URL loads but shows homepage/generic content) are as bad as 404s. The citation audit (Step 5.5) runs after report generation and before Notion upload.
+- **Every finding must have inline source links.** Every factual claim in the report must include short inline markdown links to source documentation at the end of the claim (e.g., `"Supports cursor pagination ([API reference](url))"`). Bare URLs or URL-only appendix references are not sufficient. The reader must be able to click directly from a finding to the page that supports it. Links go at the end of claims (never start a paragraph with a link), with short link text (1-5 words like "source", "API reference", "documentation").
 
 ## Adding New Categories
 
