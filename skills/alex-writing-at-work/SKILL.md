@@ -210,6 +210,36 @@ lint-prose <file>
 echo "proposed text" | lint-prose
 ```
 
+## Review
+
+After writing or editing a document, spawn a subagent to review the output against this skill's
+guidelines. The review must be independent: the subagent reads all the guidelines and the output
+text, then flags violations. This catches issues the writing agent rationalizes away.
+
+**How to run the review:**
+
+1. Use the Agent tool to spawn a subagent. Copy the full contents of this skill file inline
+   into the prompt so the subagent has every guideline without needing to locate any files.
+   Use a prompt like:
+
+   > You are a writing style reviewer. Review the following text against every guideline in
+   > the style guide below. For each violation found, quote the offending text, name the
+   > specific rule it breaks, and suggest a concrete fix. If no violations are found, say
+   > "PASS." Do not soften findings or skip minor issues.
+   >
+   > <style-guide>
+   > [paste the full skill contents here]
+   > </style-guide>
+   >
+   > <text-to-review>
+   > [paste the full output text here]
+   > </text-to-review>
+
+2. If the subagent flags violations, fix them before presenting the result to the user.
+3. If the subagent says "PASS," proceed.
+
+Do not skip this step. The review is mandatory.
+
 ## Anti-Patterns (Things to Avoid)
 
 These are specific AI writing habits that make text sound artificial. Avoid all of them.
@@ -221,6 +251,9 @@ These are specific AI writing habits that make text sound artificial. Avoid all 
    acceptable.
 5. **Overly parallel structure.** Sentences that all follow the exact same pattern sound robotic.
    Mix lengths and structures.
+   - BAD: "No ID documents, no selfies, no proof of address." (anaphora — three "no X" in a row)
+   - BAD: "We don't want that, and we don't need it." (parallel "don't X" halves)
+   - GOOD: "Recipients don't need to submit ID documents, selfies, or proof of address."
 6. **Exclamation marks.** Alex never uses them in technical documents.
 7. **"In conclusion" / "To summarize" / "In summary."** Just end. Or use "Next steps."
 8. **Numbered lists where bullets would do.** Only number when sequence matters.
@@ -232,6 +265,20 @@ These are specific AI writing habits that make text sound artificial. Avoid all 
 13. **Sycophantic openings.** "Great question!" / "That's an excellent point!" Just answer.
 14. **Abstract hand-waving.** Every claim should be grounded in a concrete example, number,
     or scenario.
+15. **Rhetorical stacking.** Combining multiple punchy devices in sequence (short emphatic
+    opener + anaphora + parallel close) reads like a pitch deck, not a technical document.
+    Space rhetorical devices out. If two consecutive sentences are both pure style moves,
+    one of them needs to become substantive.
+    - BAD: "That's it. No ID documents, no selfies, no proof of address. [...] We don't want
+      that, and we don't need it." (three rhetorical devices back to back)
+    - GOOD: "Recipients only need a name and email. Full KYC is only required in the Embedded
+      model, where each client gets onboarded separately. That's not the model we're pursuing."
+16. **Attitude over information.** Sentences like "That's it." or "End of story." convey tone
+    but no content. Every sentence should tell the reader something they didn't know. If a
+    sentence is pure attitude, cut it or fold the meaning into a substantive sentence.
+17. **Persuasive/sales voice.** Alex explains decisions through systemic reasoning, not
+    rhetorical flair. Write like a coach walking through a decision, not a salesperson closing.
+    If a paragraph could appear in a pitch deck without changes, it's wrong.
 
 ## Examples of Characteristic Sentences
 
