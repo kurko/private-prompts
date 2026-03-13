@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Lint text for AI writing anti-patterns.
+# Usage:
+#   lint-prose <file>
+#   echo "some text" | lint-prose
+
+if [ $# -gt 0 ]; then
+  # File mode
+  if [ ! -f "$1" ]; then
+    echo "FAIL: file not found: $1"
+    exit 1
+  fi
+  input="$(cat "$1")"
+else
+  # Pipe mode
+  if [ -t 0 ]; then
+    echo "Usage: lint-prose <file>"
+    echo "       echo \"text\" | lint-prose"
+    exit 1
+  fi
+  input="$(cat)"
+fi
+
+# Check for em dashes (U+2014)
+if echo "$input" | grep -Pn '\x{2014}'; then
+  echo "FAIL: em dashes found. Replace with commas, parentheses, or separate sentences."
+  exit 1
+fi
+
+echo "PASS: no em dashes found."
