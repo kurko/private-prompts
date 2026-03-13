@@ -98,6 +98,7 @@ I wrote the one above after checking Asana and understanding the overall context
 
 ### Voice and perspective
 - **Use "we" or "the team" as the subject** - Write "We discovered...", "We're waiting...", "The team consolidated..." rather than passive constructions like "Discovered..."
+- **Do not name individual engineers** - This is a team update, use "we" instead. The only exception is when the user explicitly wants to praise someone (e.g. a new team member's first project).
 - **Use active voice throughout** - "We created a test card and validated blocking" not "A test card was created"
 
 ### Level of detail
@@ -117,6 +118,18 @@ I wrote the one above after checking Asana and understanding the overall context
 - **Be direct about problems** - "Working with Galileo overall has been painful" - don't soften or hedge.
 - **State facts plainly for outages/issues** - "All INR and UPI payouts failed" not "We experienced degraded service"
 - **End items on forward momentum when possible** - "Slow steps, but we're making progress"
+
+### Links
+- The report will be pasted into Notion, which supports standard markdown links.
+- Use `[visible text](url)` format for all links (e.g `[task](https://app.asana.com/...)`)
+- Do NOT use inline bare URLs or place links next to bold titles. Instead, weave them naturally into the prose (e.g "Julie Mao shipped [product descriptions via API](url)" or "We sent [test orders](url) through Arroweye").
+- Keep link text short and descriptive (the task name or a brief label), not the full URL.
+
+### Length
+- **Keep it short.** The audience skims. Aim for 3-4 items per section (wins, thinking, concerns), not 8-9.
+- Each item should be 2-3 sentences max. If it takes a paragraph to explain, it's too detailed for this format.
+- **Consolidate aggressively.** Related smaller wins should be merged into a single item (e.g. "Engineering health" covering logo refresh, catalog ordering, NSF fixes, AI tooling). Only the biggest themes deserve their own item.
+- The whole report should fit on one screen without scrolling.
 
 ### Structure
 - **Lead with the outcome or status** - "Full rollout complete" or "Foundation work complete" at the start.
