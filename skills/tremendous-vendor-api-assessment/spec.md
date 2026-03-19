@@ -105,7 +105,7 @@ Each slice of work is processed by a single agent with its own context window. A
 Responsibilities:
 - Parse input, detect category
 - Spawn Level 2 domain investigators (in parallel where possible)
-- **Aggregation gate**: Cross-reference all findings before proceeding. Catch contradictions, review severity escalations, pre-filter questions against findings.
+- **Aggregation gate**: Cross-reference all findings before proceeding. Catch contradictions, review severity escalations, pre-filter questions against findings, and preserve verifiability for single-source docs (replace dropped links with quoted snippets).
 - Spawn verification agents to cross-check ALL findings (not just Red Flags/Concerns)
 - Generate the final report and questions document
 - Offer to push to Notion
@@ -150,6 +150,7 @@ After all investigators complete:
    - Output a structured verification table, not prose summaries
 4. Cross-reference findings between agents (e.g., if Webhook Agent says event X exists but Lifecycle Agent found no way to trigger it)
 5. Every sub-agent must document its evidence trail: which URLs it fetched, what it found, how it reached its conclusion
+6. **Final verifiability checklist** before presenting the report: every Red Flag and Concern has either an inline link or a quoted snippet, "not found" findings include what was searched, and a Source & Verifiability disclaimer exists when links are sparse
 
 ---
 
@@ -166,6 +167,8 @@ All findings use a 4-tier scale plus an "Open Question" category:
 | 4 | **Strong** | Above average; reduces integration risk | Comprehensive OpenAPI spec; detailed error taxonomy; robust webhook with HMAC + retries |
 
 Each finding includes: **Tier + Confidence (High/Medium/Low) + Signal Name + Evidence + Source URL (when available)**
+
+When all findings cite the same URL (e.g., single-page API docs), inline links are replaced with **quoted snippets** from the source so the reader can ctrl+F the docs to verify. The goal is verifiability, not link volume.
 
 ### Key Distinctions
 - **Concern vs Open Question**: A concern is a known problem. An open question is missing information that might be fine once we ask. Don't conflate "not documented" with "bad."
@@ -334,6 +337,11 @@ Embedded in the skill so agents can flag vendor model mismatches:
 [2-3 sentence overview of findings. Confidence-weighted: highlights strengths,
 concerns, and blockers with severity counts.]
 
+> **Source & Verifiability** _(only when docs are single-page or nearly so)_
+> Primary docs: [URL]. Inline links are sparse because all documentation lives on
+> a single page. Quoted text from the docs is included with findings — search the
+> docs page for these quotes to verify. Distinct URLs used: [list any other URLs].
+
 ## Severity Summary
 | Tier | Count | Key Items |
 |------|-------|-----------|
@@ -456,6 +464,13 @@ display_name: [Human Readable Name]
 ### Very Large API Surface
 - If a vendor has 100+ endpoints, the domain investigators should prioritize endpoints relevant to Tremendous's use case
 - Use the category config's base requirements to focus investigation
+
+### Single-Page or Single-Source Documentation
+- Some vendors serve all API docs on a single URL (e.g., a ReDoc SPA page)
+- Inline links to distinct sections are impossible — every link would be the same URL
+- Sub-agents use **quoted snippets** from the docs instead, so a human reader can ctrl+F to verify
+- The orchestrator adds a **Source & Verifiability** disclaimer below the Executive Summary explaining why inline links are sparse and how to verify claims
+- "Not found" findings include what search terms were tried and where (e.g., `searched full API docs for "hmac", "signature" — no matches`)
 
 ---
 

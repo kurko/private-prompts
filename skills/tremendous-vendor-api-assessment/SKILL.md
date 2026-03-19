@@ -182,6 +182,8 @@ Every factual claim in sub-agent output MUST include a short inline markdown lin
 - Multiple sources: link each separately at the end: `"Supports HMAC verification and retry policies ([webhooks guide](url), [security docs](url))"`
 - Bare URLs or URL-only appendix references are not sufficient. The reader must be able to click directly from a finding to the page that supports it.
 
+**Single-source fallback:** When all findings come from the same URL (e.g., single-page API docs), sub-agents must still provide verifiable evidence. Instead of repeating the same link on every claim, include a **quoted snippet** from the docs that the reader can search for. Format: `"Correlation ID must be unique" ([API docs](url))` on first use of the URL in a section, then `(docs: "the id is available in webhooks to correlate account creation request")` for subsequent claims in the same section. The goal is that a human reader can always ctrl+F the source and find the text that supports the claim.
+
 ### WebFetch SPA Detection and Rendering Fallback
 
 After every WebFetch call, check the response for SPA indicators:
@@ -557,6 +559,10 @@ After all sub-agents return, the orchestrator MUST perform a cross-reference rev
 4. **Resolve contradictions**: If agents disagree, the evidence with higher confidence wins. If confidence is equal, flag as "Disputed -- needs verification."
 5. **Merge findings**: Produce a consolidated findings list with resolved contradictions.
 6. **Cross-reference questions against findings**: Before the question self-answering phase, check each generated question against the consolidated findings. If another agent already answered it, remove it. If partially answered, refine the question to focus on the remaining gap.
+7. **Preserve verifiability for single-source docs.** When most or all findings cite the same URL (e.g., single-page API docs), the orchestrator must:
+   - Not silently drop inline links. If a link would be the same URL repeated throughout a section, use it once at the section level and include **quoted snippets** from the source for individual claims so the reader can search the original docs.
+   - Format: after a factual claim, add the relevant quote in a parenthetical or as an indented block: `(docs say: "Correlation ID must be unique")`
+   - For findings based on absence ("no mention of X"), note what was searched and where: `(searched full API docs for "hmac", "signature", "signing" — no matches)`
 
 Only after this gate is complete, proceed to Step 3 (Deep Assessment) or Step 4 (Question Self-Answering).
 
@@ -759,6 +765,11 @@ Save to a local markdown file. Ask the user where, suggesting `./ai-notes/vendor
 - **Define jargon on first use.** Terms like "omnibus custody," "Travel Rule," "VASP," "MCC restrictions," "co-mingled funds" should have a brief parenthetical explanation. The audience is engineering managers, not domain specialists.
 - **Distinguish findings from open questions.** If something is undocumented, it may be a concern (they should have it and don't) or an open question (it's simply not public information). Rate limits being undocumented is an open question, not necessarily a red flag.
 - **Show escalation reasoning.** If any finding was escalated above the shared-criteria baseline, note it: "Escalated from Concern to Red Flag because [reason]."
+- **Source verifiability disclaimer.** When the vendor's docs are concentrated on a single page or a small number of pages (making repeated inline links to the same URL unhelpful), add a **Source & Verifiability** note immediately below the tl;dr / Executive Summary blockquote. The note should:
+  - Name the primary doc URL(s)
+  - Explain why inline links are sparse (e.g., "All API documentation lives on a single ReDoc page, so individual section links aren't available")
+  - Tell the reader how to verify claims: "Key findings include quoted text from the docs. Search the API docs page for these quotes to verify."
+  - List the distinct URLs that ARE used in the report (e.g., security page, licenses page)
 
 #### Quick Mode Report Structure
 
@@ -981,6 +992,19 @@ the expected topic. If found, return the replacement URL.
 | [original url] | [Broken/Redirect/Mismatch] | [Replaced with [new url] / Link removed / Claim reworded] |
 ```
 
+### Step 5.6: Final Verifiability Checklist
+
+Before presenting the report to the user, the orchestrator must verify:
+
+- [ ] Every Red Flag finding has either an inline link OR a quoted snippet from the source docs
+- [ ] Every Concern finding has either an inline link OR a quoted snippet
+- [ ] If inline links are sparse (most pointing to the same URL), a Source & Verifiability disclaimer exists below the Executive Summary
+- [ ] "Not found" findings include what was searched and where (e.g., "searched for 'hmac', 'signature' — no matches")
+- [ ] The Evidence Appendix lists all URLs accessed with their Content Quality Grades
+- [ ] No finding claims "confirmed absent" without verifiable evidence (link or quote)
+
+If any check fails, fix before proceeding. Only after all checks pass, proceed to Step 6 (Notion Upload).
+
 ### Step 6: Offer Notion Upload
 
 After the user reviews the local files:
@@ -1012,6 +1036,7 @@ If yes, use `mcp__notion__notion-create-pages` to create the page with the repor
 - **agent-browser is a last resort.** Only use agent-browser for critical pages (main docs, API reference, key feature pages) when both markdown.new and defuddle.md fail. It is slow and resource-intensive.
 - **Citation audit is mandatory.** Every link in the final report must be verified before presenting to the user. Silent redirects (URL loads but shows homepage/generic content) are as bad as 404s. The citation audit (Step 5.5) runs after report generation and before Notion upload.
 - **Every finding must have inline source links.** Every factual claim in the report must include short inline markdown links to source documentation at the end of the claim (e.g., `"Supports cursor pagination ([API reference](url))"`). Bare URLs or URL-only appendix references are not sufficient. The reader must be able to click directly from a finding to the page that supports it. Links go at the end of claims (never start a paragraph with a link), with short link text (1-5 words like "source", "API reference", "documentation").
+- **Verifiability over link volume.** The purpose of inline links is human verification, not decoration. When a vendor's docs live on a single page, quotes from the docs are more useful than the same URL repeated 40 times. The orchestrator must never silently drop evidence during consolidation — if links are removed, quotes must replace them, and a disclaimer must explain why.
 
 ## Adding New Categories
 
