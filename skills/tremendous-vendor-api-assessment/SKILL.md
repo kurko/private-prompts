@@ -55,7 +55,7 @@ Skip questions the user already answered in their input.
 
 4. Attempt to access the vendor docs URL via WebFetch.
    - If docs are inaccessible (auth required, paywall, PDF-only): flag it, ask the user if they can provide content manually, continue with whatever is available.
-   - **SPA detection**: If WebFetch returns mostly JavaScript, empty body, or a page that says "enable JavaScript" with minimal actual content, attempt the Rendering Fallback Chain (see "WebFetch SPA Detection and Rendering Fallback" in Sub-Agent Rules). Record which rendering method succeeded. If all methods fail, flag as inaccessible and ask the user if they can provide content manually.
+   - **SPA detection**: If WebFetch returns mostly JavaScript, empty body, or a page that says "enable JavaScript" with minimal actual content, record the domain as SPA-rendered. Do NOT fall back to markdown.new at this stage. Instead, mark the domain for browser-based extraction in Step 0.5. The full rendering strategy is described in "Rendering Method Selection" in Sub-Agent Rules.
 
 ### Step 0.5: Sitemap and Page Discovery
 
@@ -65,7 +65,9 @@ Before spawning domain investigators, spawn a **Sitemap Discovery Agent** to bui
 You are discovering available documentation pages for [Vendor]. Your goal is to build a comprehensive
 inventory of doc pages so that investigation agents know WHERE to look.
 
-RENDERING NOTE: [Include if SPA was detected: "[domain] is SPA-rendered. Use [method] for all URLs."]
+RENDERING NOTE: [Include if SPA was detected: "[domain] is SPA-rendered. Use markdown.new
+(prepend https://markdown.new/ to URLs) for sitemap discovery — it is fast and sufficient
+for building a page inventory. The Page Extraction Agent will handle full content extraction."]
 
 1. Fetch the main docs page (via rendering service if SPA) and extract ALL internal links from the content.
 2. Check common sitemap locations:
@@ -94,7 +96,7 @@ OUTPUT a categorized page inventory:
 - **Other relevant pages**: [URLs]
 
 For each URL, note:
-- Content Quality Grade (Direct / Rendered / Inaccessible)
+- Content Quality Grade (Browser-Extracted / Direct / Rendered / Inaccessible)
 - Brief description of what the page covers (1 line)
 ```
 
@@ -103,7 +105,58 @@ The resulting `PAGE INVENTORY` is passed to ALL sub-agents in their prompts so t
 ```
 PAGE INVENTORY (discovered pages for this vendor — check these for your domain):
 [paste categorized inventory here]
+
+EXTRACTED DOCS (read these local files for SPA pages instead of fetching URLs):
+[paste file paths here, or "N/A — docs are not SPA-rendered, use WebFetch directly"]
 ```
+
+#### Page Extraction Agent (SPA docs only)
+
+When SPA rendering was detected in Step 0, spawn a **Page Extraction Agent** after the Sitemap Discovery Agent completes. This agent uses a real browser to extract full content from the primary API reference page(s), with all schemas expanded. All sub-agents then read from the extracted local file instead of fetching the URL themselves.
+
+**Why**: SPA API docs (ReDoc, Swagger UI, Stoplight, Readme.io) hide critical schema details behind collapsed sections, tabs, and dynamic widgets. markdown.new captures ~90% of the text but misses these. A single browser session extracting everything once is far more efficient than N sub-agents each struggling with incomplete content.
+
+**Trigger**: SPA detected in Step 0 AND page inventory includes API reference pages.
+
+**Agent prompt**:
+
+```
+You are extracting full API documentation content from [Vendor]'s SPA-rendered docs.
+Your output will be saved to a local file and read by all investigation sub-agents.
+
+BROWSER TOOL SELECTION (try in order):
+1. agent-browser: invoke the Skill tool with `skill: "agent-browser"` to check availability.
+   If available, use `agent-browser open`, `agent-browser eval`, `agent-browser snapshot`, etc.
+2. Chrome DevTools MCP: if agent-browser is unavailable, check for Chrome DevTools MCP tools
+   (`mcp__chrome-devtools__navigate_page`, `mcp__chrome-devtools__take_snapshot`,
+   `mcp__chrome-devtools__evaluate_script`). If available, use these instead.
+3. If neither browser tool is available, fall back to markdown.new and note that
+   schema details may be incomplete.
+
+PAGES TO EXTRACT:
+[List API reference pages from the page inventory]
+
+EXTRACTION WORKFLOW:
+1. Open the main API reference page in the browser.
+2. Wait for SPA to fully render (networkidle).
+3. Expand ALL collapsed sections — use the SPA Schema Extraction Playbook selectors
+   for the detected docs framework.
+4. For tabbed content (request/response examples, language selectors), click each tab
+   and capture all variations.
+5. Extract the full page content as structured text.
+6. If the page is very large (>500K chars), extract endpoint groups separately and
+   combine them.
+7. Repeat for any secondary API reference pages identified in the page inventory
+   (e.g., separate webhook API docs, admin API).
+
+OUTPUT: Save extracted content to a local markdown file. Report:
+- Which browser tool was used (agent-browser / Chrome DevTools MCP / markdown.new fallback)
+- How many pages were extracted
+- Any sections that could not be expanded or extracted
+- The local file path(s) for sub-agents to read
+```
+
+The orchestrator passes the local file path(s) to ALL sub-agents in their prompts alongside the PAGE INVENTORY.
 
 ### Step 1: Load Configuration
 
@@ -152,23 +205,49 @@ The orchestrator will review all escalations. Do not silently deviate from the c
 ### Confidence Indicator
 
 Every finding MUST include a confidence level, tied to the Content Quality Grade of the source page:
-- **High**: Direct quote or explicit documentation found from a **Direct** or **Browser-Extracted** source. You can link to the exact page.
-- **Medium**: Inferred from related documentation, error codes, or indirect evidence. Also the maximum confidence for findings from **Rendered** sources (markdown.new / defuddle.md) unless corroborated by a Direct source.
+- **High**: Direct quote or explicit documentation found from a **Browser-Extracted** or **Direct** source. You can link to the exact page.
+- **Medium**: Inferred from related documentation, error codes, or indirect evidence. Also the maximum confidence for findings from **Rendered** sources (markdown.new) unless corroborated by a Browser-Extracted or Direct source.
 - **Low**: Based on absence of documentation, a single indirect reference, or a page graded **Inaccessible**.
 
-Confidence CANNOT be High if the source page was accessed via a rendering service (Rendered grade) — unless the same information is corroborated by a Direct or Browser-Extracted source.
+Confidence CANNOT be High if the source page was accessed only via markdown.new (Rendered grade) — unless the same information is corroborated by a Browser-Extracted or Direct source. For SPA docs where the Page Extraction Agent ran, most findings will be Browser-Extracted and CAN be High confidence.
 
 ### Evidence Trail
 
 For every finding, document:
 1. Which URLs you WebFetched
-2. **Rendering method used**: Direct WebFetch / markdown.new / defuddle.md / agent-browser
-3. **Content Quality Grade**: Direct / Rendered / Browser-Extracted / Inaccessible
+2. **Rendering method used**: Local extracted file / agent-browser / Chrome DevTools MCP / markdown.new / Direct WebFetch
+3. **Content Quality Grade**: Browser-Extracted / Direct / Rendered / Inaccessible
 4. What you found (quote the relevant text when possible)
 5. How you arrived at the tier (your reasoning chain)
 6. **Finding classification** (when a feature is not found): "Confirmed absent" / "Not found — degraded source" / "Not found — page inaccessible"
 
 This evidence trail is included in the agent's output and will be used by the verification layer.
+
+### Rendering Method Selection
+
+Every page accessed during the assessment should use the most appropriate rendering method. The priority order reflects this skill's philosophy: **accuracy first, speed second**.
+
+**Method priority for API reference pages (schemas, endpoints, request/response bodies):**
+
+1. **Read from extracted local file** (if the Page Extraction Agent ran for this page). Content Quality Grade: Browser-Extracted. This is the primary method for SPA docs.
+2. **agent-browser** (real browser with JS execution, can expand collapsed sections). Use when: the page was not pre-extracted, or you need to verify specific interactive content. Check availability by invoking the Skill tool with `skill: "agent-browser"`. Content Quality Grade: Browser-Extracted.
+3. **Chrome DevTools MCP** (same browser engine, different tool interface). Use when: agent-browser is unavailable but Chrome DevTools MCP tools are available (`mcp__chrome-devtools__navigate_page`, `mcp__chrome-devtools__take_snapshot`, `mcp__chrome-devtools__evaluate_script`). Content Quality Grade: Browser-Extracted.
+4. **markdown.new** (WebFetch `https://markdown.new/[full-vendor-url]`). Use when: browser tools are unavailable, or for non-critical pages where schema details are not needed. Gets ~90% of content but misses collapsed schema widgets. Content Quality Grade: Rendered.
+5. **WebFetch** (direct HTTP fetch). Use when: the page is known to be static (not SPA) or for initial SPA detection probes. Content Quality Grade: Direct.
+
+**Method priority for non-critical pages (guides, tutorials, changelogs, marketing pages):**
+
+1. **WebFetch** — try first, it is fast.
+2. **markdown.new** — if WebFetch detects SPA.
+3. **Browser tools** — only if markdown.new also fails.
+
+**SPA detection** (apply after every WebFetch call):
+- Body has <500 characters of actual content
+- Contains "enable JavaScript", "Loading...", "Please turn on JavaScript", or similar
+- Body is mostly `<script>` tags with no readable content
+- Contains empty root containers like `<div id="root"></div>` or `<div id="app"></div>`
+
+**Flag as truly inaccessible**: Only after ALL methods fail (WebFetch, markdown.new, browser tools), mark the page as Inaccessible. Record: "Page [URL] could not be rendered by any method."
 
 ### Inline Source Links
 
@@ -184,43 +263,46 @@ Every factual claim in sub-agent output MUST include a short inline markdown lin
 
 **Single-source fallback:** When all findings come from the same URL (e.g., single-page API docs), sub-agents must still provide verifiable evidence. Instead of repeating the same link on every claim, include a **quoted snippet** from the docs that the reader can search for. Format: `"Correlation ID must be unique" ([API docs](url))` on first use of the URL in a section, then `(docs: "the id is available in webhooks to correlate account creation request")` for subsequent claims in the same section. The goal is that a human reader can always ctrl+F the source and find the text that supports the claim.
 
-### WebFetch SPA Detection and Rendering Fallback
+### SPA Schema Extraction Playbook
 
-After every WebFetch call, check the response for SPA indicators:
-- Body has <500 characters of actual content
-- Contains "enable JavaScript", "Loading...", "Please turn on JavaScript", or similar
-- Body is mostly `<script>` tags with no readable content
-- Contains empty root containers like `<div id="root"></div>` or `<div id="app"></div>`
+This is the primary extraction strategy for SPA-rendered API documentation. The Page Extraction Agent (Step 0.5) uses this playbook to extract full content with schemas expanded. Sub-agents may also use it when they need to verify or re-extract specific sections.
 
-If SPA is detected, execute the **Rendering Fallback Chain** — stop at the first method that returns usable content:
+**Detection triggers** (check markdown.new output for these):
+- Lines like "referenced" or "Schema >" without a field table following
+- Endpoint descriptions that list the HTTP method and path but not request/response body fields
+- Sections that say "Properties" or "Parameters" with no content below them
+- "Expand" or "Show" links that markdown.new captured as text but couldn't follow
 
-**Step A — markdown.new**: WebFetch `https://markdown.new/[full-vendor-url]` (append the full vendor URL including protocol as a path, e.g. `https://markdown.new/https://docs.vendor.com/api/overview`). If the response contains meaningful markdown content (>500 chars of text), use it and record rendering method as `markdown.new`.
+**Extraction workflow:**
 
-**Step B — defuddle.md**: WebFetch `https://defuddle.md/[vendor-domain-and-path]` (no protocol prefix, e.g. `https://defuddle.md/docs.vendor.com/api/overview`). If the response contains meaningful content, use it and record rendering method as `defuddle.md`.
+1. Open the page: `agent-browser open [url]`
+2. Wait for SPA to render: `agent-browser wait --load networkidle`
+3. Expand all collapsed sections (adjust selectors per docs framework):
+   - ReDoc: `agent-browser eval "document.querySelectorAll('button[aria-expanded=\"false\"], .model-box-control').forEach(el => el.click())"`
+   - Swagger UI: `agent-browser eval "document.querySelectorAll('.opblock-summary, .model-toggle').forEach(el => el.click())"`
+   - Stoplight / generic: `agent-browser eval "document.querySelectorAll('details:not([open]) > summary, [data-role=\"expand\"]').forEach(el => el.click())"`
+4. Wait for expanded content to render: `agent-browser wait 2000`
+5. Extract by endpoint section (NOT full page). Use CSS selectors to scope:
+   `agent-browser snapshot -s "[data-section-id='operation/createPayout']"`
+   Or use `get text @ref` on the specific section ref from a prior snapshot.
+6. For very large pages (>500K chars), extract one endpoint group at a time. Never full-page snapshot.
 
-**Step C — agent-browser (critical pages or interactive content)**: Attempt this for:
-- Pages critical to the assessment (main docs page, API reference, key feature pages) where Steps A-B failed
-- Pages where Steps A-B returned content but it contains **interactive content indicators** (see below)
+**Interactive content**: For tabs, dropdowns, accordions, or "Show more" patterns, use agent-browser to interact with each option/tab/accordion, snapshot after each interaction, and combine all variations into the extracted content.
 
-To use agent-browser: first check if a skill called `agent-browser` exists (invoke the Skill tool with `skill: "agent-browser"`). The skill provides documentation on available commands and interaction patterns. If the skill does not exist, use the `agent-browser` CLI tool directly.
+**Parallelization**: When multiple sub-agents need schema details from the same SPA page, the orchestrator should spawn a single **Schema Extraction Agent** that extracts all needed endpoint schemas in one browser session and distributes the results. This avoids N agents each opening the same heavy page.
 
-Basic extraction workflow: `agent-browser open [url]` → `agent-browser snapshot` → `agent-browser get text @ref` → extract content as text.
+**Orchestrator shortcut**: When the orchestrator discovers SPA rendering during Step 0 / Step 0.5, it communicates the rendering strategy to all sub-agents:
 
-For pages with interactive elements, use `agent-browser snapshot` to identify interactive refs, then interact with them (e.g., `agent-browser select @ref "option-value"`, `agent-browser click @ref`) and snapshot again to capture the updated content.
-
-Record rendering method as `agent-browser`.
-
-**Interactive Content Indicators** — escalate to agent-browser even if Steps A-B returned content when the rendered markdown contains:
-- `<select>` elements or references to dropdowns that change page content (e.g., "Select a delivery model", "Choose your integration type")
-- Tabbed interfaces where content differs per tab (e.g., "REST / GraphQL / SDK" tabs)
-- Accordions or expandable sections that hide content behind user interaction
-- "Show more" / "Load more" patterns that gate additional content
-
-When interactive content is detected, the agent should: use agent-browser to interact with each option/tab/accordion, snapshot after each interaction, and combine all variations into the extracted content. This ensures no content is missed behind interactive elements.
-
-**Step D — Flag as truly inaccessible**: Only after Steps A-C all fail, mark the page as Inaccessible. Record: "Page [URL] could not be rendered by any method (WebFetch, markdown.new, defuddle.md, agent-browser)."
-
-**Orchestrator shortcut**: When the orchestrator discovers SPA rendering during Step 0 / Step 0.5, it tells all sub-agents which rendering method worked for that domain so they skip the direct WebFetch attempt and go straight to the working renderer. Include this in sub-agent prompts as: `RENDERING NOTE: [domain] is SPA-rendered. Use [method] directly (e.g., prepend https://markdown.new/ to all URLs for this domain).`
+```
+RENDERING NOTE: [domain] is SPA-rendered.
+- API reference content has been pre-extracted via browser and saved to [local-file-path].
+  Read this file for all API reference, endpoint, and schema information.
+- For non-reference pages (guides, changelogs, FAQs), use markdown.new
+  (prepend https://markdown.new/ to URLs).
+- If you need to verify or re-extract specific interactive content not in the extracted
+  file, use agent-browser or Chrome DevTools MCP directly.
+  See the "SPA Schema Extraction Playbook" in the Sub-Agent Rules.
+```
 
 ### Content Quality Grades
 
@@ -228,9 +310,9 @@ Every page accessed during the assessment MUST be assigned a Content Quality Gra
 
 | Grade | Meaning | Max Confidence |
 |-------|---------|---------------|
-| **Direct** | WebFetch returned full, usable content | High |
-| **Rendered** | Content obtained via markdown.new or defuddle.md | Medium (unless corroborated by a Direct source) |
-| **Browser-Extracted** | Content obtained via agent-browser snapshot + text extraction | High (if thorough extraction) |
+| **Browser-Extracted** | Content obtained via agent-browser or Chrome DevTools MCP (full JS execution, expanded schemas) | High |
+| **Direct** | WebFetch returned full, usable content (static pages) | High |
+| **Rendered** | Content obtained via markdown.new | Medium (unless corroborated by a Browser-Extracted or Direct source) |
 | **Inaccessible** | All rendering methods failed | Low |
 
 **Finding Classification Based on Source Quality:**
@@ -238,7 +320,7 @@ Every page accessed during the assessment MUST be assigned a Content Quality Gra
 When a feature or capability is NOT found in the docs, sub-agents MUST classify the finding based on the source quality:
 
 - **"Confirmed absent"** — Only valid from **Direct** or **Browser-Extracted** pages where there is positive evidence of absence (e.g., a complete API reference that lists all endpoints and the feature is not among them).
-- **"Not found — degraded source"** — For **Rendered** pages. Sub-agents MUST state: _"Accessed via [markdown.new / defuddle.md], which may not capture interactive content, expandable sections, or dynamically-loaded elements. Human verification recommended at [URL]."_
+- **"Not found — degraded source"** — For **Rendered** pages. Sub-agents MUST state: _"Accessed via markdown.new, which may not capture collapsed schema sections, interactive content, or dynamically-loaded elements. Human verification recommended at [URL]."_
 - **"Not found — page inaccessible"** — For **Inaccessible** pages. Sub-agents MUST state: _"Could not assess — page could not be rendered by any available method."_
 
 **CRITICAL RULE: Sub-agents MUST NOT say "vendor does not support X" or "confirmed absent" based on Rendered or Inaccessible sources.** These sources may be missing interactive content, tabbed sections, or dynamically-loaded elements that contain the information.
@@ -379,7 +461,7 @@ You are assessing [Vendor]'s API documentation quality. WebFetch their docs at [
 - Changelog: Published? How often updated?
   NOTE: A missing changelog is a CONCERN (documentation gap), not a Red Flag. It does not block integration.
 - Getting started guide: Clear onboarding path?
-- SPA rendering: Did any doc pages require the rendering fallback chain? List all affected pages with their Content Quality Grade and which rendering method was used.
+- SPA rendering: Did any doc pages require browser extraction or markdown.new? List all affected pages with their Content Quality Grade and which rendering method was used.
 
 For each finding, provide: Tier + Confidence + Evidence with short inline markdown links at the end of each claim (e.g., "OpenAPI spec available at /api/openapi.json ([documentation](url))") + Reasoning.
 Generate unanswered questions tagged as Blocker/Important/Nice-to-know.
@@ -617,7 +699,7 @@ Tag each as Blocker/Important/Nice-to-know with the domain name.
 
 EVIDENCE TRAIL:
 At the end of your output, include a section listing:
-- All URLs you accessed, with rendering method used (Direct WebFetch / markdown.new / defuddle.md / agent-browser)
+- All URLs you accessed, with rendering method used (Local extracted file / agent-browser / Chrome DevTools MCP / markdown.new / Direct WebFetch)
 - Content Quality Grade for each page (Direct / Rendered / Browser-Extracted / Inaccessible)
 - Finding classification for any "not found" results (Confirmed absent / Not found — degraded source / Not found — page inaccessible)
 - Key quotes that support your findings
@@ -779,7 +861,7 @@ Save to a local markdown file. Ask the user where, suggesting `./ai-notes/vendor
 **Category**: [detected/specified category]
 **Mode**: Quick Assessment
 **Docs Reviewed**: [URLs]
-**Content Sources**: [N] Direct | [N] Rendered (markdown.new/defuddle.md) | [N] Browser-Extracted | [N] Inaccessible
+**Content Sources**: [N] Browser-Extracted (agent-browser/Chrome DevTools MCP) | [N] Direct | [N] Rendered (markdown.new) | [N] Inaccessible
 
 ## Executive Summary
 [2-3 sentences. Confidence-weighted summary highlighting strengths, concerns, and blockers.]
@@ -872,14 +954,14 @@ All [N] findings verified against source documentation. No contradictions found 
 
 ## Evidence Appendix
 
+### Browser-Extracted Sources (agent-browser / Chrome DevTools MCP)
+[List of URLs extracted via browser tools, including the Page Extraction Agent output file path]
+
 ### Direct Sources (Full Content via WebFetch)
-[List of URLs that returned full content directly]
+[List of URLs that returned full content directly — typically non-SPA pages]
 
-### Rendered Sources (markdown.new / defuddle.md)
-[List of URLs accessed via rendering services, with which service was used]
-
-### Browser-Extracted Sources (agent-browser)
-[List of URLs accessed via agent-browser, if any]
+### Rendered Sources (markdown.new)
+[List of URLs accessed via markdown.new — typically non-critical pages where browser extraction was not needed]
 
 ### Inaccessible Pages
 [List of URLs where all rendering methods failed, and what impact this had on findings]
@@ -948,8 +1030,8 @@ CLAIMS CITING THIS URL:
 1. "[surrounding sentence or bullet text]" — from section "[section name]"
 2. "[surrounding sentence or bullet text]" — from section "[section name]"
 
-Fetch the URL. Apply the standard SPA detection and rendering fallback chain
-(Direct → markdown.new → defuddle.md). Then check:
+Fetch the URL. Apply the standard SPA detection and rendering chain
+(Direct WebFetch → markdown.new for SPA pages; browser tools if needed). Then check:
 
 1. BROKEN LINK: Does the URL return a 404, error page, or fail to load entirely?
 2. SILENT REDIRECT: Does the page load but show generic/homepage content instead of
@@ -1025,15 +1107,16 @@ If yes, use `mcp__notion__notion-create-pages` to create the page with the repor
 - **Parallel execution.** Spawn independent agents in parallel wherever possible to reduce total time.
 - **Graceful degradation.** If a docs page is inaccessible, flag it and continue with what's available. Never halt the entire assessment because one page failed.
 - **No hallucinated URLs.** If you cannot access a page, say so. Never fabricate content or URLs.
+- **No hallucinated verification.** Sub-agents will confidently claim "verified via browser extraction" or "confirmed by re-reading the docs" when they have no browser tools and never fetched the page — they just rephrase existing report text with higher confidence. The orchestrator must not accept a sub-agent's claimed Content Quality Grade at face value. If a sub-agent claims Browser-Extracted confidence, verify it actually had access to browser tools or the extracted local file. If it only had the report text or markdown.new output, its findings are Rendered at best.
 - **SPA detection is mandatory.** Every sub-agent must check WebFetch responses for SPA-rendering indicators and report inaccessible pages.
 - **Verify ALL findings.** The verification layer covers every tier (Red Flag, Concern, Adequate, Strong), not just critical findings. Adequate and Strong findings can also be hallucinated.
 - **Aggregation gate is mandatory.** After the parallel investigation phase, the orchestrator must cross-reference and reconcile before proceeding to verification or question generation.
 - **Category-aware severity.** Batch operations are only Red Flag for prepaid cards. Webhook IP whitelisting is never a question worth asking if HMAC signing exists.
-- **Rendering fallback is mandatory.** Never flag a page as inaccessible without first attempting the full rendering fallback chain (markdown.new → defuddle.md → agent-browser for critical pages). Only after all methods fail can a page be marked Inaccessible.
+- **Rendering fallback is mandatory.** Never flag a page as inaccessible without first attempting the full rendering chain. For API reference pages: agent-browser / Chrome DevTools MCP → markdown.new → WebFetch. For non-critical pages: WebFetch → markdown.new → browser tools. Only after all methods fail can a page be marked Inaccessible.
 - **Content Quality Grades are mandatory.** Every page accessed during the assessment must be assigned a grade (Direct / Rendered / Browser-Extracted / Inaccessible). Every finding must reference the grade of its source.
 - **Sitemap discovery runs before domain investigators.** The Sitemap Discovery Agent (Step 0.5) is a blocking step. Its page inventory must be passed to all sub-agents.
 - **Never claim "confirmed absent" from degraded sources.** Sub-agents must not say "vendor does not support X" when the source page was Rendered or Inaccessible. Use the finding classification system: "Confirmed absent" (Direct/Browser-Extracted only), "Not found — degraded source" (Rendered), or "Not found — page inaccessible" (Inaccessible).
-- **agent-browser is a last resort.** Only use agent-browser for critical pages (main docs, API reference, key feature pages) when both markdown.new and defuddle.md fail. It is slow and resource-intensive.
+- **agent-browser is the primary rendering method for SPA docs.** For accuracy-critical pages (API reference, endpoint schemas, webhook docs), agent-browser or Chrome DevTools MCP provides the highest fidelity. The Page Extraction Agent pre-extracts these pages once; sub-agents read the local file. Use markdown.new only for non-critical pages (guides, changelogs, marketing) where speed matters more than completeness.
 - **Citation audit is mandatory.** Every link in the final report must be verified before presenting to the user. Silent redirects (URL loads but shows homepage/generic content) are as bad as 404s. The citation audit (Step 5.5) runs after report generation and before Notion upload.
 - **Every finding must have inline source links.** Every factual claim in the report must include short inline markdown links to source documentation at the end of the claim (e.g., `"Supports cursor pagination ([API reference](url))"`). Bare URLs or URL-only appendix references are not sufficient. The reader must be able to click directly from a finding to the page that supports it. Links go at the end of claims (never start a paragraph with a link), with short link text (1-5 words like "source", "API reference", "documentation").
 - **Verifiability over link volume.** The purpose of inline links is human verification, not decoration. When a vendor's docs live on a single page, quotes from the docs are more useful than the same URL repeated 40 times. The orchestrator must never silently drop evidence during consolidation — if links are removed, quotes must replace them, and a disclaimer must explain why.
