@@ -13,9 +13,23 @@ APPLICATION TYPE: [web app, API, mobile backend, etc.]
 STRIDE THREAT ASSESSMENT:
 [injected STRIDE assessment from Phase 1]
 
+DEPLOYMENT CONTEXT:
+[injected deployment context block from Phase 0.5, including the severity
+adjustment rules table — use this to calibrate severity for infrastructure-
+dependent findings like force_ssl, HSTS, firewall rules, etc.]
+
 DOMAIN PROFILE: [domain name or "None"]
-DOMAIN-SPECIFIC NOTES FOR THIS CATEGORY:
-[injected domain-specific content for this category, if applicable]
+COMPLIANCE FRAMEWORK: [domain compliance frameworks or "N/A"]
+
+SEVERITY ELEVATIONS FOR THIS CATEGORY:
+[injected from domain profile — ONLY rows where the item ID prefix matches
+this category. If no elevations apply, state "None". You MUST use elevated
+severity when rating findings that match these item IDs.]
+
+ADDITIONAL DOMAIN CHECKS FOR THIS CATEGORY:
+[injected additional checks from domain profile that are relevant to this
+category, with full detection patterns and secure patterns. If none, state
+"None".]
 
 ## Your Checklist
 
@@ -55,6 +69,9 @@ CLEAN_AREAS:
 - [area]: [what you checked and why it passed]
 
 5. CRITICAL RULES:
+   - YOUR OUTPUT WILL BE REVIEWED BY A SEPARATE AGENT that will verify every
+     claim against the actual codebase. Cite specific files and line numbers for
+     every assertion. Do not speculate. Do not generalize.
    - NEVER report speculative findings. If you cannot verify, mark INCONCLUSIVE
      and explain what you could not determine.
    - NEVER inflate severity. Use the severity rubric provided below.
@@ -74,6 +91,20 @@ synthesize your results with other subagents' findings into the final report.
 
 CATEGORY: [category name]
 STATUS: FINDINGS | CLEAN | ERROR
+
+APPLIED_ELEVATIONS:
+[For each severity elevation row injected for this category, state whether
+it was applied to a finding (cite finding ID) or not applicable (no matching
+finding). Example:
+- AC-01: HIGH -> CRITICAL (SaaS multi-tenant: IDOR = cross-tenant access) [APPLIED to 06-02]
+- AC-08: CRITICAL -> CRITICAL (no change) [NOT APPLICABLE, no finding]
+If no elevations were provided, state "None — no domain elevations for this category."]
+
+DEPLOYMENT_ADJUSTMENTS:
+[For each severity adjustment applied due to deployment context, state the
+finding ID, original severity, adjusted severity, and reason. Example:
+- CS-01: HIGH -> MEDIUM (TLS terminated at platform edge) [APPLIED to 10-01]
+If no adjustments were applied, state "None."]
 
 [findings in the format above]
 
