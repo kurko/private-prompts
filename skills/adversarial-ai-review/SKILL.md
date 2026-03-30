@@ -20,8 +20,8 @@ with the codebase might cause you to miss.
 
 | CLI | Exec mode | Output |
 |-----|-----------|--------|
-| Codex | `codex exec --dangerously-bypass-approvals-and-sandbox -o FILE PROMPT` | Writes to `-o` file |
-| Claude Code | `claude -p --dangerously-skip-permissions PROMPT` | Stdout (redirect to file) |
+| Codex | `codex exec --sandbox read-only -o FILE PROMPT` | Writes to `-o` file |
+| Claude Code | `claude -p --allowed-tools "Read Grep Glob Bash(git:*)" PROMPT` | Stdout (redirect to file) |
 
 **Rule**: Never run instances of the same AI you are. If you are Claude Code,
 run Codex. If you are Codex, run Claude Code.
@@ -137,7 +137,7 @@ Generate a topic slug from the decision (e.g., `separate-classification-from-det
 
 ```bash
 codex exec \
-  --dangerously-bypass-approvals-and-sandbox \
+  --sandbox read-only \
   -o "/tmp/adversarial-review-{topic}.md" \
   - < /tmp/adversarial-prompt-{topic}.md
 ```
@@ -147,7 +147,6 @@ codex exec \
 ```bash
 claude -p --model opus \
   --allowed-tools "Read Grep Glob Bash(git:*)" \
-  --dangerously-skip-permissions \
   < /tmp/adversarial-prompt-{topic}.md \
   > /tmp/adversarial-review-{topic}.md
 ```
@@ -225,7 +224,7 @@ Review with an adversarial mindset. Beyond the standard code review:
 
 ```bash
 codex exec \
-  --dangerously-bypass-approvals-and-sandbox \
+  --sandbox read-only \
   -o "/tmp/adversarial-review-{topic}.md" \
   - < /tmp/adversarial-prompt-{topic}.md
 ```
@@ -235,7 +234,6 @@ codex exec \
 ```bash
 claude -p --model opus \
   --allowed-tools "Read Grep Glob Bash(git:*)" \
-  --dangerously-skip-permissions \
   < /tmp/adversarial-prompt-{topic}.md \
   > /tmp/adversarial-review-{topic}.md
 ```
@@ -255,7 +253,7 @@ pipe it in rather than passing it as a CLI argument.
 
 ```bash
 codex exec \
-  --dangerously-bypass-approvals-and-sandbox \
+  --sandbox read-only \
   -o "/tmp/adversarial-review-{topic}.md" \
   - < /tmp/adversarial-prompt-{topic}.md
 ```
@@ -265,7 +263,6 @@ codex exec \
 ```bash
 claude -p --model opus \
   --allowed-tools "Read Grep Glob Bash(git:*)" \
-  --dangerously-skip-permissions \
   < /tmp/adversarial-prompt-{topic}.md \
   > /tmp/adversarial-review-{topic}.md
 ```
