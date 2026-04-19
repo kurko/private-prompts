@@ -88,11 +88,18 @@ Spawn **one Opus subagent per engineer** in parallel. Each subagent receives:
 6. **Calculate percentages** per the rules below.
 
 7. **Return structured data:**
-   - Summary table: Category | Est. % | Notes (with task URLs)
+   - Summary table: Category | Est. % | Project Description
    - Asana tasks table: Task name | URL | Status
    - OOO breakdown: PTO days, holiday days, support rotation days
    - Flagged/ambiguous tasks needing user decision
    - Total non-capitalizable %
+
+   **Project Description column guidance:** The "Project Description" in the summary table is NOT a list of task names. It is a 2-3 sentence project-level description written for accounting, explaining what the engineering work involves and why it qualifies as R&D. It should read like a Project tab entry on the R&D spreadsheet. Focus on:
+   - The engineering domain and scope (e.g., "Improving class action disbursement flows" not "bypass fix, reminder emails, campaign editing fixes")
+   - What makes the work technically novel (e.g., "designing new campaign management patterns," "reverse-engineering undocumented API behavior," "building a new shared abstraction layer")
+   - The R&D percentage context from `references/project-mapping.md` (e.g., "100% R&D" or "~70% R&D, ~30% routine maintenance")
+   
+   Individual task names belong in the Asana tasks table, not the Project Description.
 
 ### Step 3: Assemble and present
 
@@ -101,8 +108,8 @@ After all subagents return:
 1. **Present flagged items first.** Ambiguous project mappings, tasks that need a new column, edge cases. Resolve these with the user BEFORE showing the final tables.
 
 2. **Per-engineer detail sections** with:
-   - Summary % table
-   - Asana tasks table with URLs
+   - Summary % table (Category | Est. % | Project Description). The Project Description column should contain accounting-ready descriptions that explain the R&D nature of the work, not task-level bullet lists. These descriptions should be reusable as Project tab entries on the spreadsheet.
+   - Asana tasks table with URLs (this is where individual task names go)
    - OOO section
 
 3. **Spreadsheet-ready summary table** using EXACT column names from the spreadsheet:

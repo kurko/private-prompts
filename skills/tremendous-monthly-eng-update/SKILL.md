@@ -111,6 +111,7 @@ I wrote the one above after checking Asana and understanding the overall context
 - **Include blockers and who owns them** - "Waiting on Galileo to enable features on their side" is good; it names the external dependency.
 - **Include customer/business impact** - "This unlocks regulated clients who need to control spending categories"
 - **Include next steps when relevant** - "Next, we want to use Account-based MCC restrictions..."
+- **Include eng-complete items even if validation lands next month** - If the team built it in March and it was validated in early April, it's a March win. Don't gate wins on business validation dates.
 - **Exclude internal process details** - Don't mention things like "a postmortem is being written" or "updated the status page"
 - **Exclude implementation minutiae** - Don't list specific API fields, configuration parameters, or technical prerequisites unless essential to understanding.
 
@@ -122,8 +123,9 @@ I wrote the one above after checking Asana and understanding the overall context
 ### Links
 - The report will be pasted into Notion, which supports standard markdown links.
 - Use `[visible text](url)` format for all links (e.g `[task](https://app.asana.com/...)`)
-- Do NOT use inline bare URLs or place links next to bold titles. Instead, weave them naturally into the prose (e.g "Julie Mao shipped [product descriptions via API](url)" or "We sent [test orders](url) through Arroweye").
+- Do NOT use inline bare URLs or place links next to bold titles. Instead, weave them naturally into the prose (e.g "We sent [test orders](url) through Arroweye").
 - Keep link text short and descriptive (the task name or a brief label), not the full URL.
+- **Use links very sparingly.** Only link headline deliverables in win items (1-2 links per item max). Supporting tasks, stability fixes, catalog additions, and "engineering health" items should be described in prose without links. Too many inline links forces the reviewer to check each one, defeating the purpose of a summary. Keep the full evidence list (with all links) in a separate section for traceability.
 
 ### Length
 - **Keep it short.** The audience skims. Aim for 3-4 items per section (wins, thinking, concerns), not 8-9.

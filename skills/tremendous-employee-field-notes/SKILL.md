@@ -1,6 +1,6 @@
 ---
 name: tremendous-employee-field-notes
-description: "Append entries to an employee field notes document in Notion. Use when Alex says /field-notes or asks to add to someone's field notes."
+description: "Append entries to an employee field notes document in Notion. Use when Alex says /field-notes, asks to add/edit/update someone's field notes, shares a Notion URL with 'field notes' in the title, or asks to record key points about an employee in Notion."
 argument-hint: "<notion-url>"
 ---
 
@@ -96,6 +96,23 @@ Wait for approval before proceeding.
 
 Use `mcp__claude_ai_Notion__notion-update-page` to append the entry. Append only.
 
+**Notion API pitfalls (hard-won lessons):**
+
+1. **Never use `\n` escape sequences in string parameters.** The Notion MCP tool treats
+   `\n` as literal text, not newlines. Use actual newlines in the `new_str` / content
+   parameters. If content renders as one giant paragraph, this is why.
+
+2. **Never use `replace_content` to edit one entry.** It rewrites the entire page and
+   risks mangling previous entries. Always use `update_content` with targeted `old_str`
+   matches. If matching fails (e.g., dynamic S3 image URLs), use a smaller, unique
+   substring that avoids the dynamic content.
+
+3. **`<empty-block/>` is only for major section breaks.** Use it between date-header
+   entries (`### Jan`, `### Feb`, `### April 2`). Never between subsections within an
+   entry (bold labels like "My assessment:", "Action items:"). Notion's native block
+   spacing handles subsection gaps. Over-using `<empty-block/>` creates visible blank
+   lines that look broken.
+
 ### Step 7: Cross-link in Obsidian
 
 See Obsidian Cross-Linking section below.
@@ -106,11 +123,14 @@ See tl;dr Management section below.
 
 ## Entry Types
 
+**Header format:** always use `:` as separator, never `-`. The only place `-` appears is in
+bullet points.
+
 ### 1. Journal Observation
 
 **Format:**
 ```markdown
-### Mar 24
+### Mar 24: [Short label]
 [Narrative in Alex's voice. First-person, direct, uses contractions.]
 Status: [open | resolved | monitoring]
 ```
@@ -119,7 +139,7 @@ Status: [open | resolved | monitoring]
 
 **Format:**
 ```markdown
-### Mar 24 - [Short incident label]
+### Mar 24: [Short incident label]
 **tl;dr** [One sentence summarizing the incident pattern.]
 - **[Date]:** [Event description] [link or quote]
 - **[Date]:** [Event description] [link or quote]
@@ -130,7 +150,7 @@ Status: [open | resolved | monitoring]
 
 **Format:**
 ```markdown
-### The Feedback (by Alex) - Mar 24
+### The Feedback (by Alex): Mar 24
 **Observed:** [Specific, factual description. No judgment. Dates, actions, quotes.]
 **Impact:** [Concrete consequence on team, project, or business. No emotional language.]
 **Ask:** [Clear behavioral change. Forward-looking expectation. "Going forward, I need you to..." not "It would be great if you could..."]
@@ -169,6 +189,25 @@ Use `alex-writing-at-work` document style:
 - No corporate jargon. Plain language.
 - No hedging unless genuine uncertainty exists.
 - Active voice throughout.
+
+### Conciseness rules (applies to all entry types)
+
+These are field notes, not narratives. Write for someone who already knows the people and
+the org. Cut anything the reader can infer.
+
+- **One sentence per bullet, max.** Don't elaborate inside a bullet point. If a bullet
+  needs a second sentence, it's two bullets or the detail isn't needed.
+- **Skip narrative setup.** Don't narrate how information reached Alex. "Magnus shared
+  skip-level feedback" not "Magnus called me after completing skip-level interviews tied
+  to performance reviews."
+- **Self-assessment and analysis in bullets, not paragraphs.** When Alex's own take follows
+  evidence, use a bulleted list under a bold label. Short, blunt lines.
+- **Parenthetical status annotations.** Use inline parentheticals for follow-up status,
+  corrections, or personal notes: "(never sent me anything)", "(I know he doesn't)",
+  "(needs confirmation)".
+- **Short assessment one-liners.** "My assessment: none of this is news to me." Direct,
+  no softening, no preamble.
+- **No `-` except in bullet points.** Headers, labels, and separators use `:` instead.
 
 ### O/I/A blocks
 
