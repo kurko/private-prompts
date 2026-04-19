@@ -10,8 +10,12 @@ if [ "$SCRIPT_DIR" != "$TARGET_DIR" ]; then
   exit 1
 fi
 
-# Ensure Claude config directories exist
+# Ensure config directories exist
 mkdir -p ~/.claude/commands ~/.claude/skills ~/.claude/agents
+mkdir -p ~/.codex
+
+# Codex CLI config
+ln -nfs "$SCRIPT_DIR/codex-config.toml" ~/.codex/config.toml
 
 # Symlink private commands/skills/agents to Claude config
 for f in "$SCRIPT_DIR"/commands/*; do
