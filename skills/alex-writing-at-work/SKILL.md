@@ -59,6 +59,12 @@ Use plain, concrete language. Avoid corporate jargon and buzzwords.
 - "ensure" (say "make sure" or restructure)
 - "it's important to note that" / "it's worth mentioning" (just say the thing)
 - "moving forward" as a phrase (use "next steps" or just describe what's next)
+- "honestly," "genuinely," "quietly" as judgment or drama adverbs. Describe the action instead:
+  "she told me before I asked," not "she disclosed it honestly." When a single word is needed,
+  prefer concrete ones: "proactively," "transparent." ("silently" stays for technical behavior,
+  e.g. errors that don't notify; "seamlessly" stays for describing the experience of a solution.)
+- "preemptively" (rare in Alex's writing; usually the action can carry it)
+- "layer" for text or comments (say "text" or "comments"; "layer" belongs to actual architecture)
 
 **Strong verbs Alex reaches for:** "catches," "flags," "triggers," "bubbles up," "masks,"
 "burns (money)," "spins up," "steps in," "doubles down," "shifts," "turns (that boat around)."
@@ -103,7 +109,7 @@ Propose solutions as directional bets, not blueprints. Invite the team to fill i
 - Frame as collective action: "We'll establish," "we propose," "we should."
 - Stage solutions in phases: first observability, then optimization. First local adoption,
   then team-wide rollout.
-- Acknowledge tradeoffs and measurement gaps honestly: "Measuring a 30% improvement with
+- Acknowledge tradeoffs and measurement gaps plainly: "Measuring a 30% improvement with
   precision is hard and requires telemetry that we don't have today."
 - Provide explicit escape hatches: "We will manage that on a case-by-case basis."
 - Use a Pros/Cons/Fixes structure when evaluating multiple options.
@@ -142,6 +148,24 @@ These are AI writing habits that make text sound artificial. Avoid all of them.
     but no content. Every sentence should tell the reader something they didn't know.
 11. **Persuasive/sales voice.** Alex explains decisions through systemic reasoning, not
     rhetorical flair. Write like a coach walking through a decision, not a salesperson closing.
+12. **Empty framing labels.** "The gap:", "The catch:", "The kicker:", "Here's the thing,"
+    "Bottom line," "what matters," bold "*X matters:*" lead-ins, "not flashy, but...". These
+    assert importance or build tension without adding information. Name the concrete thing:
+    "Her review caught the major issues," not "Her review caught what matters."
+13. **Abstract slogans and bare name-lists.** A process triad like "own pass first, then
+    instruct, then verify" adds nothing when the concrete steps follow it; cut the slogan and
+    keep the actions. A list of names with no facts attached ("BIN changes, bulk card work,
+    and ledger builders are all part of making prepaid scale") reads as filler; attach what
+    changed or what it unblocks to each item, or collapse the list to one line.
+14. **Meta-annotations.** Parentheses carry facts ("(she admitted)", "(needs confirmation)"),
+    not audience tags or purpose notes ("(for the hiring manager)"). If a paragraph needs an
+    audience label to land, rewrite the paragraph.
+
+To judge whether a sentence carries substance, useful smell tests: does it tell the reader
+something they didn't know, is a concrete actor doing a concrete thing, would deleting it
+lose anything, does each list item carry a fact. These are illustrative, not gates: don't
+mechanically cut a sentence for failing one or keep it for passing all of them. The principle
+is that every sentence earns its place with concrete information; judgment decides the rest.
 
 ## Document Style
 

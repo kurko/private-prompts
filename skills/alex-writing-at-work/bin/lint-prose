@@ -23,10 +23,37 @@ else
   input="$(cat)"
 fi
 
-# Check for em dashes (U+2014)
-if echo "$input" | grep -Pn '\x{2014}'; then
+fail=0
+
+# Check for em dashes (U+2014). Literal character, not \x{2014}:
+# BSD grep on macOS has no -P (PCRE), and a failing grep made this check
+# silently pass forever.
+if echo "$input" | grep -n '—'; then
   echo "FAIL: em dashes found. Replace with commas, parentheses, or separate sentences."
+  fail=1
+fi
+
+# Banned framing phrases: they assert importance or build tension without
+# adding information. Name the concrete thing and state it directly.
+banned_phrases=(
+  "here's the thing"
+  "bottom line"
+  "the catch:"
+  "the kicker:"
+  "the gap:"
+  "what matters"
+  "not flashy"
+)
+
+for phrase in "${banned_phrases[@]}"; do
+  if echo "$input" | grep -Fin "$phrase"; then
+    echo "FAIL: banned framing phrase (\"$phrase\"). State the thing directly."
+    fail=1
+  fi
+done
+
+if [ "$fail" -eq 1 ]; then
   exit 1
 fi
 
-echo "PASS: no em dashes found."
+echo "PASS: no em dashes or banned phrases found."
