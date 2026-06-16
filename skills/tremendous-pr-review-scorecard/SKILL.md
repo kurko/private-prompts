@@ -43,7 +43,7 @@ Each candidate gets their own repo: `tremendous-interviews/pr-review-interview--
 2. Write the skeleton below into today's daily note (`journal/daily/YYYY-MM-DD.md`). If Alex already started a section for the interview, fill in around his content and never overwrite his lines (fixing an obvious typo in the header, like a misspelled name, is fine).
 3. Output the opening script in chat so Alex can read it on the call.
 
-**Questions to include**: the doc's Questions section (good-signal notes in italics), plus "In a long PR, how do you prioritize what you're going to focus on?" from the bank below (Alex's standing follow-up). About 3 total; the discussion slot is only 15 minutes.
+**Questions to include**, in this order: Alex's standing opener "In a long PR, how do you prioritize what you're going to focus on?" (from the bank below), then the doc's "ship fast vs. code quality" question (Alex's priority among the doc questions), then the rest of the doc's questions. Pull the exact wording and good-signal notes from the doc and reference the questions by topic here; never paste their text into this skill. The discussion slot is only 15 minutes, so the scaffold lays out all of them and Alex picks which to ask live.
 
 **Q:/A: format.** During the call Alex arrows down from the Q line and types straight after `A: `; bold or quoted questions make that slower:
 
@@ -57,13 +57,17 @@ A:
 
 **Live-editing caution.** On interview days Alex types in the daily note while you edit it. If Edit fails with "file modified", re-read and retry with a small, stable anchor. If he is actively typing and the target spot is the end of the file, append with a `cat >> file <<'EOF'` heredoc instead; an append cannot clobber his text.
 
-Skeleton:
+Skeleton (lay out every section up front, including the ones filled in later, so each has a home before the call: Final report and Meeting transcripts get filled during scoring, His questions while Alex talks with the candidate):
 
 ```markdown
 ## <Candidate Name> PR Review interview
 
 Rubric: https://app.notion.com/p/tremendous/Interview-PR-review-bf2745b48d5e4101891e7f39321e0048
 PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1
+
+### Final report
+
+tl;dr
 
 ### Raw notes
 
@@ -74,9 +78,15 @@ PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pu
 Q: ...
 A: 
 
+### His questions
+
+- 
+
 ### Post call notes
 
 - 
+
+### Meeting transcripts (Granola)
 ```
 
 ## Opening Script
@@ -158,7 +168,7 @@ With the MCP connected: find the call with `mcp__granola__list_meetings` (custom
 
 ### Step 2: Score (main agent)
 
-Use the candidate's PR comments, Alex's notes from the daily note section (Raw notes, Call notes answers, Post call notes), AND the Granola transcript when available. The transcript is the strongest evidence for discussion credit and for how the candidate handled questions verbally; use it to fill gaps in Alex's typed notes and to cross-check his in-the-moment impressions. Per the doc, the live discussion counts: a candidate who explains an issue verbally ("I focused on the architectural problem first to avoid overwhelming the author") gets credit even without a written comment. Mark those "raised in discussion".
+Use the candidate's PR comments, Alex's notes from the daily note section (Raw notes, Call notes answers, His questions, Post call notes), AND the Granola transcript when available. The transcript is the strongest evidence for discussion credit and for how the candidate handled questions verbally; use it to fill gaps in Alex's typed notes and to cross-check his in-the-moment impressions. Per the doc, the live discussion counts: a candidate who explains an issue verbally ("I focused on the architectural problem first to avoid overwhelming the author") gets credit even without a written comment. Mark those "raised in discussion".
 
 Per issue: caught, partial, or missed. Extra findings count positively. Mis-aimed comments (right instinct, wrong target, like a nil-guard suggestion on a value that can't be nil) deserve a note; they show how the candidate thinks.
 
@@ -173,7 +183,11 @@ Rate: **Excellent** / **Good** / **Needs work** / **Concerning**.
 
 ### Step 4: Outputs
 
-Append A, B, and E to the candidate's section in the daily note (mind the live-editing caution above): A and B go after Post call notes, E goes last. If the live discussion hasn't happened yet, show A and B in chat instead and append once the call is done. C stays in chat only.
+Write A, B, and E into the candidate's section in the daily note (mind the live-editing caution above). Prep already laid out the headings, so fill them rather than appending new ones:
+- B (final report) fills the `### Final report` section, replacing the `tl;dr` placeholder.
+- A (scorecard) goes directly after the `### Final report` section.
+- E (transcript) fills the `### Meeting transcripts (Granola)` section at the end.
+Match an existing heading even if it is a close variant (for example `### Meeting transcripts` without the suffix); only create a section if the note predates this scaffold and lacks it. If the live discussion hasn't happened yet, show A and B in chat instead and fill them once the call is done. C stays in chat only.
 
 **A. Scorecard** (bullet style, matching how past scorecards read in the daily notes):
 
@@ -191,7 +205,7 @@ Append A, B, and E to the candidate's section in the daily note (mind the live-e
 
 N is the issue count in the fetched doc; never hardcode it. Calibrate the signal by severity: catching most Highs is a strong signal even with Lows missed; catching mostly Lows while missing the Highs is concerning regardless of the total.
 
-**B. Final write-up (for Ashby)**: a `### Final write-up (for Ashby)` section following `/tremendous-interview-notes` exactly: tl;dr verdict, narrative, candidate's questions, pros/cons. The scorecard informs the verdict but doesn't determine it alone; a candidate with middling catches, great tone, and a strong discussion can still be a Yes.
+**B. Final report (for Ashby)**: fill the `### Final report` section following `/tremendous-interview-notes` exactly: tl;dr verdict, narrative, candidate's questions, pros/cons. This is the write-up Alex pastes into Ashby. The scorecard informs the verdict but doesn't determine it alone; a candidate with middling catches, great tone, and a strong discussion can still be a Yes.
 
 Keep the write-up to about half a page. The scorecard above carries the detail; the write-up carries the verdict and the signals. Don't re-describe the PR review comment-by-comment: anyone can click the PR, a detailed AI-written summary is expensive for Alex to verify against the real comments, and when the candidate used AI it reads like reviewing the AI instead of the candidate. One or two sentences on catch rate and key issues, then spend the words on how the candidate thinks, how they use AI, and how the discussion went. Alex also pastes his raw notes at the bottom of the Ashby entry, so the write-up never needs the full content of the meeting, only the highlights that weigh on the decision.
 
@@ -203,10 +217,10 @@ Keep the write-up to about half a page. The scorecard above carries the detail; 
 
 **D.** If the live discussion is still ahead (empty `A: ` lines, no post-call notes), also output the questions and opening script.
 
-**E. Call transcript (Granola)**: append the transcript as the final subsection of the candidate's section, after the Final write-up:
+**E. Meeting transcripts (Granola)**: fill the `### Meeting transcripts (Granola)` section at the end of the candidate's section with the transcript:
 
 ```markdown
-### Call transcript (Granola)
+### Meeting transcripts (Granola)
 
 [transcript]
 ```
