@@ -40,10 +40,12 @@ Use these EXACT names in output. This table is updated after each monthly run ba
 | Vendor New Integration (Apple Wallet) | Apple Wallet / Add to Wallet - Apple tasks |
 | Vendor New Integration (Google Wallet) | Google Wallet / Add to Wallet - Google tasks |
 | Vendor New Integration (Galileo) | Galileo prepaid card integration: namespace refactor, new managers, bulk cards |
-| Vendor New Integration (Nium, int'l bank transfer) | Nium international bank transfer tasks, new Nium features (RFI alerts, new currency support) |
+| Vendor New Integration (Nium, int'l bank transfer) | Nium international bank transfer tasks, new Nium features (RFI alerts, new currency support). NIUM ONLY - Zelle/US Bank is a separate column, do not fold it here |
+| Catalog - Zelle | Zelle payouts via US Bank: US Bank API client, mTLS auth, enrollment checks, order create/retrieve, balance lookups, UsBankManager, funds movement. This is a US Bank integration, NOT Nium (column named "Catalog - Zelle" by Alex, June 2026) |
 | Catalog vendor refactor | Architectural rewrite: shared interfaces, base classes, vendor contract patterns |
 | MCC Restrictions (Galileo) | MCC/MID restricted prepaid cards: pilot, GA release, automation |
-| Class action flows inhancements | Class action claim flow improvements, Selection-at-Claim, campaign management |
+| Catalog Venmo username | Venmo-specific product work (username confirmation, handle payouts) |
+| Class action flows enhancements | Class action claim flow improvements, Selection-at-Claim, campaign management |
 | Catalog product descriptions | Product description management tasks, API exposure |
 | Catalog reward minimums | Reward minimum threshold tasks |
 | Catalog addresses | Address standardization, address entity work |
@@ -54,7 +56,22 @@ Use these EXACT names in output. This table is updated after each monthly run ba
 | Draft orders | Draft order feature work |
 | NetSuite Integration | NetSuite accounting integration tasks |
 | Vendor idempotency (Galileo) | Vendor idempotency / deduplication tasks |
+| Catalog Wallet Products (SEA) | Making SEA digital wallets (GCash, DANA, GoPay, OVO, ShopeePay) publicly available: pricing tiers, catalog recategorization, fee calculation, custom pricing migration |
+| Looking Glass | AI-facing read-only endpoints for inspecting Rails data (payouts, merchant cards, prepaid cards) |
+| Consumer business fake door test | Big-bet initiative validating recipient interest in a new consumer line of business (Britney Wright's initiative; Vinicius worked it May 2026) |
+| Visa products selector refactor | Refactor of the hard-coded Visa/prepaid card product selection logic into configurable, data-driven abstractions (Julie Miller, started May 2026). Do NOT fold this into Vendor New Integration (Galileo) - it has its own column per Alex, June 2026 |
 | Settlement Windows | Settlement window configuration tasks |
+| Stablecoin Payouts | Stablecoin/crypto payout method exploration and in-product testing |
+| Vendor New Integration (Galileo Bulk Cards) | Galileo bulk physical card issuance with Arroweye embossing: card issuance, tracking, notifications, direct shipping |
+
+### Project tab descriptions for new columns
+
+When a new column is added, a corresponding row must be added to the **Project tab** with a description that makes the R&D nature apparent to accounting/auditors. Use this style (one paragraph, what it is + engineering work + why it's R&D):
+
+| Column | Year | Description | % R&D |
+|---|---|---|---|
+| Vendor New Integration (Galileo Bulk Cards) | 2026 | Building a bulk physical card issuance pipeline through Galileo and Arroweye embossing. Engineers designed the card issuance integration, shipment tracking ingestion from the embossing vendor, email notification delivery for bulk orders, and LAP (Letters and Parcels) direct shipping validation. The work involves integrating two vendor APIs (Galileo for card issuance, Arroweye for physical embossing/fulfillment) with different data formats and coordinating end-to-end card lifecycle across both systems. | 100% |
+| Stablecoin Payouts | 2026 | Exploration and in-product testing of stablecoin (cryptocurrency) as a new payout method for reward recipients. Engineers are evaluating the technical feasibility of integrating blockchain-based payment rails into the existing payout infrastructure, designing the recipient redemption experience, and building in-product test flows to validate the approach before committing to a full integration. This is a new payment category with no existing vendor patterns to reuse. | 100% |
 
 ### Project columns (~70% R&D)
 
@@ -100,7 +117,7 @@ The R&D report uses "Other Team Catalog tasks" as a catch-all. Before entering i
 |---|---|
 | "Galileo" + refactor/namespace/shared interface/manager/bulk cards | Vendor New Integration (Galileo) |
 | "Galileo" + ledger/mismatch/anomaly/transaction fix/auth code | Vendor Integration Improvements (Galileo) |
-| "Galileo" (ambiguous, not support ticket) | Flag for user — could be either New or Improvements |
+| "Galileo" (ambiguous, not support ticket) | Flag for user - could be either New or Improvements |
 | "MCC" or "MCC Restrictions" or "restricted cards" | MCC Restrictions (Galileo) |
 | "Visa" or "Visa::" (bug fix) | Vendor Integration Improvements |
 | "Nium" + new feature (RFI alerts, new currency) | Vendor New Integration (Nium, int'l bank transfer) |
@@ -116,13 +133,19 @@ The R&D report uses "Other Team Catalog tasks" as a catch-all. Before entering i
 | "NetSuite" | NetSuite Integration |
 | "idempotency" (vendor context) | Vendor idempotency (Galileo) |
 | "settlement" | Settlement Windows |
-| "intl bank transfer" or "international" (payout) | Vendor New Integration (Nium, int'l bank transfer) |
+| "intl bank transfer" or "international" (payout, Nium) | Vendor New Integration (Nium, int'l bank transfer) |
+| "Zelle" or "US Bank" or "UsBankManager" or "US Bank API client" | Catalog - Zelle - NEVER Nium |
 | "product description" | Catalog product descriptions |
 | "reward minimum" | Catalog reward minimums |
 | "class action" or "claim" or "selection-at-claim" | Class action flows inhancements |
 | "address" or "Address standardization" | Catalog addresses |
 | Seeds improvements, retry logic, timeout investigation | Vendor Integration Improvements |
 | Venmo/PayPal/Zelle exploratory work | Vendor Integration Improvements |
+| "Venmo" + username/handle/confirmation | Catalog Venmo username |
+| "stablecoin" or "crypto" (payout context) | Stablecoin Payouts |
+| "bulk cards" or "Arroweye" or "embossing" or "LAP direct shipping" | Vendor New Integration (Galileo Bulk Cards) |
+| "wallet products" or "GCash" or "DANA" or "GoPay" or "OVO" or "ShopeePay" or "SEA wallets" | Catalog Wallet Products (SEA) |
+| "Looking Glass" or "AI agents to inspect Rails data" | Looking Glass |
 
 ### Support rotation and tickets
 
@@ -152,5 +175,21 @@ After each monthly run, update this section with mapping corrections from the us
 - 2026-02 (Jan v3 run): Asana MCP `asana_search_tasks` can hang indefinitely. Use `asana_typeahead_search` for the access check (fast, reliable). Do NOT spawn subagents for the access check step.
 - 2026-02 (Jan v3 run): Notion `ai_search` mode returns empty for "Engineering Calendar". MUST use `workspace_search` mode. The database ID is `21e266b7-da09-43ab-a307-efe19b4943d8`.
 - 2026-04 (Mar run): The spreadsheet distinguishes "Vendor New Integration" (new features, 100% R&D) from "Vendor Integration Improvements" (reactive/maintenance, ~70% R&D). Galileo has both columns. Map refactor/new-feature work to New, ledger/bug-fix work to Improvements.
-- 2026-04 (Mar run): "Other Team Catalog tasks" must be split into specific spreadsheet columns before entering data. Don't use it as a single bucket — map to MCC Restrictions, Catalog product descriptions, Vendor Integration Improvements, etc.
-- 2026-04 (Mar run): Don't include column numbers in the skill file — they shift when new columns are added to the spreadsheet. Use column names only.
+- 2026-04 (Mar run): "Other Team Catalog tasks" must be split into specific spreadsheet columns before entering data. Don't use it as a single bucket - map to MCC Restrictions, Catalog product descriptions, Vendor Integration Improvements, etc.
+- 2026-04 (Mar run): Don't include column numbers in the skill file - they shift when new columns are added to the spreadsheet. Use column names only.
+- 2026-05 (Apr run): Summary tables per engineer must list categories in alphabetical order to match the spreadsheet's column layout. General Maintenance/Non-cap always goes last.
+- 2026-05 (Apr run): When a new column is needed, include a copy-pasteable Project tab entry (Year, Project name, Description, Percent R&D, Status) in the report so the user can add it directly.
+- 2026-05 (Apr run): Read the previous month's report in the vault for user edits/corrections before assembling the new month.
+- 2026-05 (Apr run): User prefers dedicated project columns over the "Catalog Vendor Integration Improvements" catch-all. When an engineer's R&D time is dominated by one identifiable project (e.g., Venmo username work, Looking Glass), create a specific column for it rather than lumping it into the generic bucket.
+- 2026-05 (Apr run): User classified smaller miscellaneous tasks (Nexamp investigation, fee passing, Xoxoday webhooks, Davinci refactor, Zelle brief) as non-capitalizable rather than forcing them into "Catalog Vendor Integration Improvements." When tasks are small and don't clearly tie to a named R&D project, the user may prefer non-cap over a generic R&D catch-all. Flag these for the user rather than auto-assigning to Vendor Improvements.
+- 2026-05 (Apr run): "Class action flows inhancements" spelling was fixed to "Class action flows enhancements" in the April tab.
+- 2026-05 (Apr run): New columns added in April: "Catalog Venmo username", "Catalog Wallet Products (SEA)", "Looking Glass", "Stablecoin Payouts", "Vendor New Integration (Galileo Bulk Cards)". Column layout is now fully alphabetical.
+- 2026-06 (May run): `asana_search_tasks` with modified_on filters silently under-returns - it missed Victor S's Zelle/US Bank subtasks and Julie Miller's high-priority "Visa products selector refactor". Have subagents verify each engineer's in-progress umbrella tasks via get_task/stories, and have the orchestrator cross-check the month's eng update (`notes/ai-tasks/Monthly Eng Update - *.md` in the vault) before assembling.
+- 2026-06 (May run): Check which manager block each engineer sits in on the monthly tab before assembling - Vinicius Barboza appeared under Britney Wright's block (Consumer business fake door test 38%), with his row pre-filled by Britney on a 21-weekday basis. Reconcile splits with the other manager instead of overwriting.
+- 2026-06 (May run): Company offsites (e.g., Lisbon Engineering offsite May 18-22) are non-capitalizable for ALL engineers - 25% on the 20-day basis. The Notion calendar entry is Company-wide with empty People; it still applies to everyone.
+- 2026-06 (May run): "Vendor New Integration (Cash App)" column exists on the 2026 sheet - Cash App Direct work (Julie Mao) maps there.
+- 2026-06 (May run, post-review): Zelle/US Bank is its OWN column, which Alex created and named "Catalog - Zelle" (NOT "Vendor New Integration (...)", NOT Nium). The April report wrongly folded Zelle into "Vendor New Integration (Nium, int'l bank transfer)". Any "Zelle", "US Bank", "UsBankManager" task → "Catalog - Zelle". Nium int'l is for Nium only.
+- 2026-06 (May run): SEA wallets ("Make wallet products publicly available") had zero May engineering - blocked in "Waiting for product" Apr 20-Jun 2. Don't allocate blocked-and-idle months to the project (different from actively-blocked time where planning continues).
+- 2026-06 (May run, post-review): Alex created a dedicated "Visa products selector refactor" column. Julie Miller's May split: selector refactor 10%, Vendor New Integration (Galileo) 5% (ledger generic workers only). Card-product-selector work never goes under VNI (Galileo).
+- General lesson (May run): when a project doesn't fit an existing column, Alex would rather create a NEW dedicated column than fold it into a loosely-related existing one (Zelle into Nium, selector into Galileo were both wrong). Default to proposing a new column with a paste-ready Project tab description, not a forced fit.
+- 2026-06 (May run, post-review): Report format - lead with "Decision needed" (only true decisions, with recommendations); missing columns/Project-tab rows are NOT decisions, Alex creates them himself and only needs the paste-ready description; push everything informational to a one-line-per-item FYI section at the bottom.

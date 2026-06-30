@@ -57,34 +57,37 @@ A:
 
 **Live-editing caution.** On interview days Alex types in the daily note while you edit it. If Edit fails with "file modified", re-read and retry with a small, stable anchor. If he is actively typing and the target spot is the end of the file, append with a `cat >> file <<'EOF'` heredoc instead; an append cannot clobber his text.
 
-Skeleton (lay out every section up front, including the ones filled in later, so each has a home before the call: Final report and Meeting transcripts get filled during scoring, His questions while Alex talks with the candidate):
+Skeleton (lay out every section up front, so each has a home before the call: Final report, the PR Review Scorecard, and Meeting transcripts get filled during scoring, His questions while Alex talks with the candidate). The scorecard and transcript sit below Post call notes on purpose, so Alex can copy from Final report through Post call notes into Ashby without them:
 
 ```markdown
-## <Candidate Name> PR Review interview
+# <Candidate Name> PR Review interview
 
 Rubric: https://app.notion.com/p/tremendous/Interview-PR-review-bf2745b48d5e4101891e7f39321e0048
 PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1
 
-### Final report
+## Final report
 
 tl;dr
 
-### Raw notes
-
-- 
+## Raw notes
 
 ### Call notes
+
+- 
 
 Q: ...
 A: 
 
-### His questions
-
+His questions
 - 
 
 ### Post call notes
 
 - 
+
+### PR Review Scorecard (AI)
+
+***
 
 ### Meeting transcripts (Granola)
 ```
@@ -184,15 +187,15 @@ Rate: **Excellent** / **Good** / **Needs work** / **Concerning**.
 ### Step 4: Outputs
 
 Write A, B, and E into the candidate's section in the daily note (mind the live-editing caution above). Prep already laid out the headings, so fill them rather than appending new ones:
-- B (final report) fills the `### Final report` section, replacing the `tl;dr` placeholder.
-- A (scorecard) goes directly after the `### Final report` section.
+- B (final report) fills the `## Final report` section, replacing the `tl;dr` placeholder.
+- A (scorecard) fills the `### PR Review Scorecard (AI)` section, which prep places below Post call notes so Alex can copy the report through Post call notes into Ashby without it.
 - E (transcript) fills the `### Meeting transcripts (Granola)` section at the end.
-Match an existing heading even if it is a close variant (for example `### Meeting transcripts` without the suffix); only create a section if the note predates this scaffold and lacks it. If the live discussion hasn't happened yet, show A and B in chat instead and fill them once the call is done. C stays in chat only.
+Match an existing heading even if it is a close variant (a different heading level, or `### Meeting transcripts` without the suffix); only create a section if the note predates this scaffold and lacks it. If the live discussion hasn't happened yet, show A and B in chat instead and fill them once the call is done. C stays in chat only.
 
 **A. Scorecard** (bullet style, matching how past scorecards read in the daily notes):
 
 ```markdown
-### PR Review Scorecard
+### PR Review Scorecard (AI)
 
 **Catch rate: X of N** (High: a/b, Medium: c/d, Low: e/f; plus partials)
 **Tone: [rating]** ([one-line why])
@@ -205,7 +208,7 @@ Match an existing heading even if it is a close variant (for example `### Meetin
 
 N is the issue count in the fetched doc; never hardcode it. Calibrate the signal by severity: catching most Highs is a strong signal even with Lows missed; catching mostly Lows while missing the Highs is concerning regardless of the total.
 
-**B. Final report (for Ashby)**: fill the `### Final report` section following `/tremendous-interview-notes` exactly: tl;dr verdict, narrative, candidate's questions, pros/cons. This is the write-up Alex pastes into Ashby. The scorecard informs the verdict but doesn't determine it alone; a candidate with middling catches, great tone, and a strong discussion can still be a Yes.
+**B. Final report (for Ashby)**: fill the `## Final report` section following `/tremendous-interview-notes` exactly: tl;dr verdict, narrative, candidate's questions, pros/cons. This is the write-up Alex pastes into Ashby. The scorecard informs the verdict but doesn't determine it alone; a candidate with middling catches, great tone, and a strong discussion can still be a Yes.
 
 Keep the write-up to about half a page. The scorecard above carries the detail; the write-up carries the verdict and the signals. Don't re-describe the PR review comment-by-comment: anyone can click the PR, a detailed AI-written summary is expensive for Alex to verify against the real comments, and when the candidate used AI it reads like reviewing the AI instead of the candidate. One or two sentences on catch rate and key issues, then spend the words on how the candidate thinks, how they use AI, and how the discussion went. Alex also pastes his raw notes at the bottom of the Ashby entry, so the write-up never needs the full content of the meeting, only the highlights that weigh on the decision.
 

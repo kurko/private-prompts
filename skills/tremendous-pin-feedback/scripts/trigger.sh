@@ -89,4 +89,19 @@ ALLOWED_TOOLS="Agent,Read(*),Grep,Glob,WebFetch,mcp__slack__slack_get_thread_rep
 # Run from a project directory that has MCP plugins configured
 cd ~/work/core
 
-echo "$PROMPT" | claude -p --allowedTools "$ALLOWED_TOOLS"
+echo "$PROMPT" | claude -p --allowedTools "$ALLOWED_TOOLS" || true
+
+# Close redirected fds so tee flushes and exits, then wait for it
+exec 1>&- 2>&-
+wait 2>/dev/null || true
+
+# Determine outcome by looking for post-feedback.sh's success marker
+if grep -q '^Posted successfully$' "$LOG_FILE"; then
+  echo "=== STATUS: posted ===" >> "$LOG_FILE"
+else
+  echo "=== STATUS: failed ===" >> "$LOG_FILE"
+  terminal-notifier \
+    -title 'Pin feedback FAILED' \
+    -message "$(basename "$LOG_FILE") — URL: $URL" \
+    -ignoreDnD -sound Basso >/dev/null 2>&1 || true
+fi

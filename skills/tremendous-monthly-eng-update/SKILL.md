@@ -189,9 +189,19 @@ For the _concerns_ section in the document, you will need my input, but it's fin
 
 Notice there's a little bit of humor in the template to keep it a light touch but not much, and it's straight to the point. I'll make edits later, so don't worry about getting it perfect.
 
+### Write the report to the vault (for review before Notion)
+
+Write the final report into a new markdown file in the Obsidian vault so I can edit it before pasting into Notion. Do not paste into Notion directly.
+
+- Location: `notes/ai-tasks/`, alongside the past updates (e.g `Monthly Eng Update - April 2026 Evidence.md`).
+- Filename and H1: `Monthly Eng Update - <Publish Month> <Year> (covering <Covered Month>)`. Reports are titled by the month they are PUBLISHED and cover the PRIOR month's work, so a report written in June about May work is `Monthly Eng Update - June 2026 (covering May)`.
+- Include: a one-line pointer to the previous report, the wins/thinking/concerns prose, a Sources section with all the links written down (keep links out of the prose, they're hard to read inline), and a short dedup-notes section listing what was cut or reframed.
+- Link the new file from today's daily note.
+
 ## Post-report generation verification
 
 - Check the last report generated in this table, https://www.notion.so/tremendous/28eeed2e006880e9904afa6f0ea41a60?v=28eeed2e0068802699a0000c6ddeea26 (using the same fetching rules above to prevent too much content), and make sure we aren't reporting what we have already reported the previous month.
+- Mind the off-by-one: reports are named by publish month and cover the PRIOR month's work (the "May 2026" report covers April). When you report month M's work, the previous report to dedup against is the one published the month before, which covers M-1. Fetch and read that specific report, not the one whose title matches month M.
 - When the generated report repeats with the previous month's report very closely, let me know and edit your version, indicating what was overlaping.
 - When the generated report repeats with the previous month's report very closely but the work has continued for that month and is worth keeping in the report, let me know, but make sure to edit your version so it doesn't look like it's the first time we're reporting about it.
 - Don't mention "leadership is part of the planning, so there's buy in".

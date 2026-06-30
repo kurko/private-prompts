@@ -160,6 +160,23 @@ These are AI writing habits that make text sound artificial. Avoid all of them.
 14. **Meta-annotations.** Parentheses carry facts ("(she admitted)", "(needs confirmation)"),
     not audience tags or purpose notes ("(for the hiring manager)"). If a paragraph needs an
     audience label to land, rewrite the paragraph.
+15. **Figurative language where a plain assessment belongs ("this isn't poetry").** Report what
+    happened; don't dress it up. Cut these classes:
+    - Agentive verbs on abstract subjects: "instinct carried the catch rate," "experience
+      anchored his answers," "judgment drove the score." Abstractions don't act. Say "He has
+      strong instincts. The written catch rate was modest."
+    - Competitive or race framing: "where he separated himself," "stood out from the field."
+      Measure against the bar, not an implied pack: "he did really well in the discussion."
+    - Commercial idioms for engineering judgment: "nickel-and-diming," "penny-pinching,"
+      "splitting hairs." Name the real tradeoff, or cut the clause.
+    - Colloquial effort verbs for how someone prepared: "crammed," "speed-ran," "boned up."
+      State the fact ("he flagged he was rusty"); don't characterize the hustle.
+    - Plain words over elevated stand-ins: "started with" over "led with," "did really well"
+      over "excellent."
+16. **Proportionality phrases with no values.** "effort scaling with scope," "complexity
+    commensurate with risk," "depth proportional to stakes" sound like insight but say nothing.
+    State the actual relationship ("a one-line PR for a version bump, the full write-up for real
+    work") or cut it. Litmus: if deleting the phrase loses no information, it carried none.
 
 To judge whether a sentence carries substance, useful smell tests: does it tell the reader
 something they didn't know, is a concrete actor doing a concrete thing, would deleting it
@@ -194,7 +211,10 @@ for qualifiers, examples, and counterpoints that shouldn't break the sentence fl
 
 Use colons to introduce explanations and lists. Use them freely.
 
-Avoid semicolons. Break into separate sentences instead.
+Avoid semicolons as a sentence-joiner. Break into separate sentences instead. One exception:
+a semicolon can separate items in an inline series when the items are multi-word phrases and
+commas would blur the boundaries, e.g. "hotfix vs customer-promise handled differently; tests
+around the change; reset expectations with PM/sales."
 
 Avoid em dashes. Use commas, parentheses, or separate sentences for interjections. Two hyphens
 (" -- ") are acceptable occasionally, but don't reach for them as a default.
