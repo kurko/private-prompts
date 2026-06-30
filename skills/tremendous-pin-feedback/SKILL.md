@@ -22,9 +22,10 @@ The only write operation this skill performs is posting to the Google Sheet.
 2. **Get the source URL** from the user (Slack thread, Github PR, Asana task, Jira, Notion document and more)
 3. **Fetch the content** using an available CLI (e.g gh) or MCP tools (see Slack fallback below)
 4. **Follow linked URLs** found in the content to gather deeper context (see Deep Link Traversal below)
-5. **Resolve the team member's full name** (see Member Name Resolution below)
-6. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
-7. **Post to the sheet** using the script
+5. **Identify the target person** — who is this feedback *for*? (see Target Person below). Do this BEFORE resolving the name.
+6. **Resolve the target's full name** (see Member Name Resolution below)
+7. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
+8. **Post to the sheet** using the script
 
 ## Fetching Slack Content
 
@@ -183,6 +184,33 @@ Arguments:
 - `url`: Source URL (Slack thread or Asana task)
 
 The script automatically adds the current timestamp.
+
+## Target Person
+
+**This is critical, and it runs BEFORE name resolution. Decide *who the feedback is for* before you decide how to spell their name.**
+
+A message has two roles that are usually the same person but sometimes split:
+- **Author** — who *wrote* the message / opened the PR / created the task.
+- **Subject** — who the message *talks about*.
+
+When a PM or a teammate writes a message praising someone else, these diverge: the author is one person, the subject is another.
+
+### The rule
+
+1. **Default to the message author.** The target is whoever wrote the source content, full stop. This is the default even when the body is mostly *about* someone else.
+2. **Override only when the description explicitly names a different person.** If the user's input says something like "pin this for Ivy" or "save as praise for the engineer", target that named person instead.
+3. **When author and subject differ and the description is silent → the author wins.** Do NOT infer the target from who the text is about, how many times a name appears, or who the praise is written toward. A name being mentioned — even prominently — is not a request to target that name.
+
+### Worked example (the case that went wrong)
+
+- Source: a Slack post **written by Julie Mao** (a PM) praising **Ivy's** work on the Product Descriptions API.
+- User said: "pin Julie" (no mention of Ivy as the target).
+- ❌ Wrong: target Ivy because the text is all about Ivy's leadership.
+- ✅ Right: target **Julie Mao** — she is the author, and the description named no one else.
+
+### The PM-praises-engineer exception
+
+The one common case where you *intentionally* target the subject instead of the author: a PM (or anyone) writes about a project accomplishment, and **the user's description says they want to save it as praise for a particular engineer**. The trigger is the user naming that engineer in the description — not the mere fact that an engineer is the subject. No name in the description → fall back to the author (rule 1).
 
 ## Member Name Resolution
 
