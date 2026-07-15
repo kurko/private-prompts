@@ -86,6 +86,12 @@ fi
 # IMPORTANT: Slack tools are READ-ONLY - no post_message, reply_to_thread, or add_reaction
 ALLOWED_TOOLS="Agent,Read(*),Grep,Glob,WebFetch,mcp__slack__slack_get_thread_replies,mcp__slack__slack_get_channel_history,mcp__slack__slack_get_users,mcp__slack__slack_get_user_profile,mcp__asana__asana_get_task,mcp__asana__asana_get_stories_for_task,mcp__asana__asana_typeahead_search,Bash(gh:*),Bash(curl*https://slack.com/api/search*),Bash(${SKILL_DIR}/scripts/post-feedback.sh:*),Bash(~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-feedback.sh:*)"
 
+# Success marker: post-feedback.sh writes "posted" here on confirmed success.
+# We can't grep the log for post-feedback.sh's output — claude -p only prints
+# the model's final message, not tool output, so that marker never appears.
+export PIN_FEEDBACK_STATUS_FILE="${LOG_FILE%.log}.status"
+rm -f "$PIN_FEEDBACK_STATUS_FILE"
+
 # Run from a project directory that has MCP plugins configured
 cd ~/work/core
 
@@ -95,8 +101,8 @@ echo "$PROMPT" | claude -p --allowedTools "$ALLOWED_TOOLS" || true
 exec 1>&- 2>&-
 wait 2>/dev/null || true
 
-# Determine outcome by looking for post-feedback.sh's success marker
-if grep -q '^Posted successfully$' "$LOG_FILE"; then
+# Determine outcome from the status file written by post-feedback.sh
+if [[ -f "$PIN_FEEDBACK_STATUS_FILE" ]] && grep -q '^posted$' "$PIN_FEEDBACK_STATUS_FILE"; then
   echo "=== STATUS: posted ===" >> "$LOG_FILE"
 else
   echo "=== STATUS: failed ===" >> "$LOG_FILE"
