@@ -147,6 +147,7 @@ later in the year.
 - Keep the tone professional but warm, not overly formal. I mean, just write like I would.
 - For positive feedback, let's tone down words like "excellent", unless I mention it. I don't want it to denote perfection.
 - Use professional language suitable for perf reviews
+- Never use em dashes in the feedback text. Use commas, parentheses, or separate sentences instead.
 - **If others provided substantive feedback in the thread**, add a sentence at the end summarizing their input (e.g., "Notably, Jane mentioned this helped her plan the QA timeline.")
 
 ### Input
