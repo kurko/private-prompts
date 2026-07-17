@@ -39,7 +39,7 @@ puts({
   url: ENV["URL"]
 }.to_json)')
 
-RESPONSE=$(curl -sS -L \
+RESPONSE=$(curl -sS -L --max-time 30 \
   -H "Content-Type: application/json" \
   -d "$PAYLOAD" \
   "$GSHEET_PUSH_APP_URL")
@@ -50,9 +50,13 @@ if echo "$RESPONSE" | ruby -r json -e 'exit JSON.parse(STDIN.read)["success"] ? 
     echo "posted" > "$PIN_FEEDBACK_STATUS_FILE"
   fi
 else
-  echo "Error: $RESPONSE" >&2
+  echo "Error: response was not recognized as success: $RESPONSE" >&2
+  echo "The row MAY have been posted to the sheet anyway." >&2
+  echo "Do NOT retry posting. Stop and report this response to the user." >&2
   exit 1
 fi
 
-# Show macOS notification on success
-terminal-notifier -title 'Pin feedback' -message "Posted feedback for $MEMBER" -ignoreDnD
+# Show macOS notification on success. Never let a notifier problem fail the
+# script: the row is already posted, and a nonzero exit here invites a retry
+# (and a duplicate row).
+terminal-notifier -title 'Pin feedback' -message "Posted feedback for $MEMBER" -ignoreDnD || true
