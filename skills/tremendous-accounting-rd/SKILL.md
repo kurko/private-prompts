@@ -23,14 +23,16 @@ Update these values when team composition or Asana structure changes.
 
 **Team: Catalog** (Manager: Alex Oliveira)
 
-| Engineer | Country | Asana GID |
-|---|---|---|
-| Vinicius Barboza | Brazil | `1199708178186870` |
-| Victor Antoniazzi | Brazil | `1204547985434746` |
-| Victor David Santos | Brazil | `1200341780572475` |
-| Julie Mao | US | `1205266575630349` |
-| Julie Miller | US | `1207919732271562` |
-| Filipe Costa | Brazil | `1204163251557610` |
+| Engineer | Country | Asana GID | Notes |
+|---|---|---|---|
+| Vinicius Barboza | Brazil | `1199708178186870` | **Last included: June 2026 run. Exclude from the July 2026 run onward** (per Alex, 2026-07-15) |
+| Victor Antoniazzi | Brazil | `1204547985434746` | |
+| Victor David Santos | Brazil | `1200341780572475` | |
+| Julie Mao | US | `1205266575630349` | |
+| Julie Miller | US | `1207919732271562` | |
+| Filipe Costa | Brazil | `1204163251557610` | |
+| Sarah Laine | US | `1215477244324838` | New hire, started 2026-06-08. First included: June 2026 run |
+| Dionne Stanfield | TBD (confirm country) | `1216099555672581` | New hire, started ~2026-07-01. **First included: July 2026 run** (nothing to report for June) |
 
 **Asana IDs:**
 
@@ -70,11 +72,17 @@ Before any data gathering, verify that both Asana and Notion are accessible. Do 
 1. **Asana check:** Call `mcp__asana__asana_typeahead_search` with workspace `752389237742425`, query `"Vinicius"`, resource_type `user`. This is a fast call that confirms Asana connectivity. Do NOT use `asana_search_tasks` for the check (it can hang).
 2. **Notion check:** Call `mcp__notion__notion-search` for "Engineering Calendar" with `content_search_mode: "workspace_search"`. **CRITICAL: You MUST use `workspace_search` mode.** The default `ai_search` mode returns empty results. The Engineering Calendar database ID is `21e266b7-da09-43ab-a307-efe19b4943d8`. Then call `mcp__notion__notion-fetch` with that ID to confirm read access.
 
+Note on tool naming: the Notion MCP may be exposed as `mcp__claude_ai_Notion__notion-search` / `notion-fetch` (claude.ai connector) instead of `mcp__notion__*`. Use ToolSearch to load whichever exists before calling.
+
 **If either service fails: STOP IMMEDIATELY.** Report which service is inaccessible and do not proceed. The user must fix access before continuing. Do not attempt to generate a report with partial data, as the output will be unreliable (non-capitalizable percentages will be wildly inflated without Notion OOO data).
 
 ### Step 1b: Verify engineer GIDs (first run only)
 
 If any engineer GID in the config above is "TBD", use `mcp__asana__asana_typeahead_search` to look up each engineer by name in workspace `752389237742425`, resource_type `user`. Once verified, tell the user to update this file with the correct GIDs so future runs skip this step.
+
+### Step 1c: Pull OOO once (orchestrator)
+
+Query the Engineering Calendar data source directly with ONE SQL call via `notion-query-data-sources` (data source `collection://43c0f83d-daca-45fa-beab-06efceacc415`): select Title, Type, Team, People, and the Dates start/end columns for entries overlapping the target month. From the results derive each engineer's PTO days, public holidays (People lists confirm who observes which holiday), support rotation windows, and offsites. Pass this to each subagent as AUTHORITATIVE OOO so they skip Notion entirely - this proved more reliable than per-subagent Notion searches (June 2026 run).
 
 ### Step 2: Gather data (parallel subagents)
 
@@ -96,7 +104,7 @@ Spawn **one Opus subagent per engineer** in parallel. Each subagent receives:
 
 2. **Detect support rotation** by searching project `1211885557232421` for assignments to this engineer in the target month. Also search project `1198207191493787` for support tickets assigned to them.
 
-3. **Search Notion for OOO** (each subagent searches independently for resilience). Use `mcp__notion__notion-fetch` with the Engineering Calendar database ID `21e266b7-da09-43ab-a307-efe19b4943d8` to get calendar entries. Alternatively, use `mcp__notion__notion-search` with query matching the engineer's name AND `content_search_mode: "workspace_search"` (NEVER use `ai_search` mode, it returns empty). Look for entries matching this engineer in the target month. Extract: date range, type (PTO, holiday, medical, offsite). If a Notion call fails, retry up to 2 times before reporting the failure.
+3. **Use the authoritative OOO from Step 1c** (passed in the subagent prompt). Subagents do NOT query Notion. Only if the orchestrator could not pull the calendar should a subagent fall back to `notion-fetch` with database ID `21e266b7-da09-43ab-a307-efe19b4943d8` (workspace_search mode, never ai_search).
 
 4. **Check the public holiday list** for the engineer's country in `references/holidays-and-ooo.md`. Count working days lost to holidays.
 
@@ -137,20 +145,13 @@ After all subagents return:
    - NEVER present as DECIDE: a column to create, a Project-tab row to paste, a confirmed finding, or a borderline mapping where you applied a sensible default (state the default under FYI). If it does not block sign-off and needs no judgment, it is not a DECIDE.
    (Feedback from the May 2026 run: "categorize by action... I had to read all of them to understand if I needed to decide on anything. My cognitive load on this task is very high.")
 
-2. **Per-engineer detail sections** with:
-   - Summary % table (Category | Est. % | Project Description). The Project Description column should contain accounting-ready descriptions that explain the R&D nature of the work, not task-level bullet lists. These descriptions should be reusable as Project tab entries on the spreadsheet.
-   - Asana tasks table with URLs (this is where individual task names go)
-   - OOO section
+2. **Spreadsheet-ready summary table** - immediately after Start here (tables at the TOP of the document, evidence sections after; Alex works top-down from the doc while filling the sheet). Requirements:
+   - EXACT column names from the monthly tab, WITH the tab's column letters in the header (read the monthly tab's header row and name column first to compute letters and row numbers)
+   - Engineer INITIALS below each percentage (`60%<br>J Mao`) - Obsidian doesn't freeze the leftmost column when scrolling right, so each cell must self-identify. Initials: VA, VS, J Mao, J Miller, FC, SL (disambiguate the Julies as J Mao / J Miller)
+   - Include only columns with values; each row sums to ~100%
+   - Do NOT produce a transposed (projects-as-rows) variant - trialed June 2026, Alex doesn't use it
 
-3. **Spreadsheet-ready summary table** using EXACT column names from the spreadsheet:
-
-```
-| Engineer | [Project Col 1] | [Project Col 2] | ... | Non Capitalizable |
-|---|---|---|---|---|
-| Vinicius Barboza | 45% | 35% | ... | 10% |
-```
-
-Each row should sum to ~100%.
+3. **Missing Project tab rows** - compare every monthly-tab column that carries a value against the Project tab. List rows that need adding, each paste-ready with: Year, Project name (matching the column EXACTLY), Description (accounting style: what it is + engineering work + why it's R&D), Percent R&D, Status, and **Support link for the Notes column (F)** - the Asana umbrella task URL for the project (other managers do this; Alex wants it standard). Watch for renamed near-duplicates before proposing a row (e.g., "Catalog Vendors Integration Improvements" row = "Catalog Vendor Integration Improvements" column; "International payouts (Nium, int'l bank transfer)" row = the Nium column). Also flag existing rows with blank Status cells and mis-pasted descriptions.
 
 4. **Quick reference: Non-capitalizable % per engineer**
 
@@ -159,9 +160,23 @@ Each row should sum to ~100%.
 |---|---|---|---|---|
 ```
 
+5. **Per-engineer detail sections** (after all tables) with:
+   - Summary % table (Category | Est. % | Project Description). The Project Description column should contain accounting-ready descriptions that explain the R&D nature of the work, not task-level bullet lists. These descriptions should be reusable as Project tab entries on the spreadsheet.
+   - Asana tasks table with URLs (this is where individual task names go)
+   - OOO section
+
 ### Step 4: Save output
 
-Save the full report to `~/work/core/ai-notes/r&d-tracking-{month}-{year}.md` (e.g., `r&d-tracking-jan-2026.md`).
+Save the full report to the vault (canonical): `orgs/tremendous/accounting/R&D {YYYY}-{MM}.md`, and copy it to the legacy path `~/work/core/ai-notes/r&d-tracking-{month}-{year}.md`. Link the report from today's daily note, then commit and push the vault.
+
+### Step 5: Post-fill review (after Alex enters the numbers)
+
+When Alex says he's filled the sheet, verify his entries cell-by-cell against the report:
+
+1. Re-read the monthly tab using NARROW gog ranges (e.g. `E52:K57`, `AL52:AY57`) - wide ranges make empty-cell counting error-prone. Confirm every value sits in the intended column and each row's Total check is 100% (a value in the wrong column still sums to 100, so check placement, not just totals). June 2026 caught a 5% entered one column left of target and a missing Total formula on a newly inserted row.
+2. Check the manager sign-off cell (Alex Oliveira block, top of tab).
+3. Re-read the Project tab: confirm new rows were added, Status cells aren't blank, descriptions aren't mis-pasted, and Notes (column F) has the Asana support link.
+4. Update the report's "Start here" to reflect what's done vs remaining, and record any user corrections in `references/project-mapping.md`.
 
 ## Calculation rules
 

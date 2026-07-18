@@ -10,6 +10,7 @@
 | Jan 19 | Martin Luther King Jr. Day |
 | Feb 16 | Presidents' Day |
 | May 25 | Memorial Day |
+| Jun 19 | Juneteenth (confirmed observed via Notion Engineering Calendar, June 2026) |
 | Jul 3 | Independence Day (observed) |
 | Jul 4 | Independence Day |
 | Sep 7 | Labor Day |

@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+#
+# looking-glass-readonly-cli — read-only CLI for Tremendous' internal Looking Glass data API.
+#
+# Usage:
+#   looking-glass-readonly-cli schema                        Full resource schema
+#   looking-glass-readonly-cli <resource> [param=value ...]  List records
+#   looking-glass-readonly-cli <resource> <id>               Fetch a single record
+#
+# Examples:
+#   looking-glass-readonly-cli organizations 'filter[public_token]=SGGNMTLF7MUO'
+#   looking-glass-readonly-cli payouts 'filter[gift_id]=123' limit=50 sort=-created_at
+#   looking-glass-readonly-cli gifts 456789
+#
+# Options:
+#   --env <production|staging|sandbox>  Target environment (default: production)
+#   --raw                               Print compact JSON (no pretty-printing)
+#   -h, --help                          Show this help
+#
+# Auth is ambient: Tailscale ingress injects Tailscale-User-Login, which the
+# Rails app maps to an AdminUser with the looking_glass permission. This
+# script only ever issues GET requests.
+
+set -euo pipefail
+
+usage() {
+  sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//' >&2
+}
+
+err() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+base_url() {
+  local env="$1"
+  case "$env" in
+    production | staging | sandbox)
+      echo "https://core-${env}.tailef7039.ts.net/internal/looking_glass"
+      ;;
+    *)
+      err "unknown env '${env}' (expected production, staging, or sandbox)"
+      ;;
+  esac
+}
+
+pretty_print() {
+  if [[ "$RAW" == "true" ]] || ! command -v python3 > /dev/null; then
+    cat
+  else
+    python3 -m json.tool
+  fi
+}
+
+ENV="production"
+RAW="false"
+POSITIONAL=()
+QUERY_PARAMS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --env)
+      [[ $# -ge 2 ]] || err "--env requires a value"
+      ENV="$2"
+      shift 2
+      ;;
+    --raw)
+      RAW="true"
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *=*)
+      QUERY_PARAMS+=("$1")
+      shift
+      ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+
+[[ ${#POSITIONAL[@]} -ge 1 ]] || {
+  usage
+  exit 1
+}
+[[ ${#POSITIONAL[@]} -le 2 ]] || err "too many arguments: ${POSITIONAL[*]}"
+
+PATH_PART="${POSITIONAL[0]}"
+if [[ ${#POSITIONAL[@]} -eq 2 ]]; then
+  PATH_PART="${PATH_PART}/${POSITIONAL[1]}"
+fi
+
+CURL_ARGS=(--silent --show-error --fail-with-body --max-time 30 --get)
+for param in ${QUERY_PARAMS[@]+"${QUERY_PARAMS[@]}"}; do
+  CURL_ARGS+=(--data-urlencode "$param")
+done
+
+curl "${CURL_ARGS[@]}" "$(base_url "$ENV")/${PATH_PART}" | pretty_print

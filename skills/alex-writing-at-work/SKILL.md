@@ -65,6 +65,15 @@ Use plain, concrete language. Avoid corporate jargon and buzzwords.
   e.g. errors that don't notify; "seamlessly" stays for describing the experience of a solution.)
 - "preemptively" (rare in Alex's writing; usually the action can carry it)
 - "layer" for text or comments (say "text" or "comments"; "layer" belongs to actual architecture)
+- "root-caused" as a verb ("you root-caused it"). Alex never uses debugging lingo as verbs; say
+  "found the root cause," "investigated the root cause," or "traced it to the cause." The noun
+  "root cause" is fine.
+- "serious" as a size intensifier in formal settings ("serious revenue," "serious volume").
+  Say "considerable," or state the actual number. The adverb for actions stays ("you stumbled
+  seriously") and casual chat is exempt.
+- "serious" as a size intensifier in formal writing ("serious revenue," "serious volume"). Say
+  "considerable," or state the actual number. (The adverb "seriously" for actions, e.g. "you
+  stumbled seriously," stays.)
 
 **Strong verbs Alex reaches for:** "catches," "flags," "triggers," "bubbles up," "masks,"
 "burns (money)," "spins up," "steps in," "doubles down," "shifts," "turns (that boat around)."
@@ -283,14 +292,25 @@ Try running `lint-prose` from the `bin/` directory next to this skill file. It s
 file and pipe modes. If the script doesn't exist or isn't available, skip this step.
 
 ```bash
-# File mode
+# File mode: fixes curly quotes in the file, reports anything left to fix by hand
 lint-prose <file>
 
 # Pipe mode (for text in the context window before posting)
+# Corrected text comes back on stdout; diagnostics go to stderr.
 echo "proposed text" | lint-prose
 ```
 
-Slack output is exempt from linting. The linter targets document prose only.
+**Curly quotes are auto-fixed, not flagged.** Alex types straight quotes (`'` and `"`), so curly
+ones (`'`, `'`, `"`, `"`) are a tell that the text came from somewhere else. The substitution is
+mechanical and lossless, so the script just does it: in file mode it rewrites the file in place
+(only when something changed), in pipe mode it returns the corrected text on stdout. Em dashes and
+banned phrases still fail with exit 1, because those need a real rewrite rather than a substitution.
+
+Diagnostics (`FIXED:`, `FAIL:`, `PASS:`) all go to stderr so stdout stays clean for piping.
+
+Document prose is what the em-dash and banned-phrase checks target; Slack output is exempt from
+those. The curly-quote fix is worth running on anything before it gets posted or pasted, Slack
+included, since that's where curly quotes are most obvious.
 
 ### Document Anti-Patterns
 

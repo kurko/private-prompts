@@ -7,8 +7,8 @@
 # Enable multi-agent so Codex can follow subagent instructions in skills
 # like code-review (experimental feature).
 multi_agent = true
-model = "gpt-5.5"
-model_reasoning_effort = "xhigh"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
 
 # MCP servers
 notify = ["/Users/alex/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
@@ -19,22 +19,29 @@ args = ["--ws-port", "51426"]
 
 [mcp_servers.node_repl]
 args = []
-command = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node_repl"
+command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
 startup_timeout_sec = 120
 
 [mcp_servers.node_repl.env]
 NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
-NODE_REPL_NODE_MODULE_DIRS = "/Applications/Codex.app/Contents/Resources/cua_node/lib/node_modules"
-NODE_REPL_NODE_PATH = "/Applications/Codex.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/alex/.codex"
 CODEX_HOME = "/Users/alex/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "72614174f4dad67a58d46a3ac759cffb45c92fa48a293af4c4ea35102ba391ba"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,cf732b4a285497bfd7e75a2ac14879bce9ae644eb4e1babeb17bb6a840dfc9bd"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.608.12217"
-CODEX_CLI_PATH = "/Applications/Codex.app/Contents/Resources/codex"
+BROWSER_USE_CODEX_APP_VERSION = "26.707.72221"
+CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
+
+[mcp_servers.computer-use]
+command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+args = ["mcp"]
+cwd = "."
+enabled = false
 
 [notice]
 "hide_gpt-5.1-codex-max_migration_prompt" = true
@@ -60,31 +67,63 @@ enabled = true
 [plugins."presentations@openai-primary-runtime"]
 enabled = true
 
-[plugins."sites@openai-bundled"]
-enabled = true
-
-[plugins."browser@openai-bundled"]
-enabled = true
-
 [plugins."pdf@openai-primary-runtime"]
 enabled = true
 
 [plugins."template-creator@openai-primary-runtime"]
 enabled = true
 
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."sites@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
 [marketplaces.openai-bundled]
-last_updated = "2026-06-10T12:26:29Z"
+last_updated = "2026-07-16T01:23:41Z"
 source_type = "local"
 source = "/Users/alex/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-06-24T06:08:17Z"
+last_updated = "2026-07-16T11:24:19Z"
 source_type = "local"
 source = "/Users/alex/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
 [desktop]
 ambient-suggestions-enabled = false
 conversationDetailMode = "STEPS_COMMANDS"
+followUpQueueMode = "queue"
+dock-icon-preference = "codex-system"
+show-context-window-usage = true
+
+[desktop.open-in-target-preferences]
+global = "systemDefault"
 
 [features]
 js_repl = false
+
+[projects."/Users/alex/work/tremendous"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Writing"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Codex/2026-07-14/res"]
+trust_level = "trusted"
+
+[hooks.state]
+
+[hooks.state."/Users/alex/work/tremendous/.codex/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:cbf2ca87a2d52439dd94fb2eea7bb53891dda4b1635f61463e153dada64d197a"
+
+[hooks.state."/Users/alex/work/tremendous/.codex/hooks.json:post_tool_use:1:0"]
+trusted_hash = "sha256:3a5239bc9edf3d2dfc727e2eda770a24899b5d0f9423ed8e9454145038b6f3ed"
+
+[hooks.state."/Users/alex/work/tremendous/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:7688afeb02bf486a2fe4fb6ea9461e12e18ce2aaa2c4f279857695ce3079235a"
+
+[tui.model_availability_nux]
+"gpt-5.6-sol" = 1
