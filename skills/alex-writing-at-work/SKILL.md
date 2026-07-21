@@ -233,7 +233,7 @@ Use tildes for approximation in technical contexts: "~25,000 transfers/hour," "~
 ### Document Structure
 
 Structure is flexible and should fit the document type. Don't force every document into the same
-template. That said, here are common patterns:
+template. Pick a shape first (see **Document Shapes** below), then apply these patterns:
 
 **Opening:** Always front-load the point. The first 1-3 lines should tell the reader what this
 document is about and why it exists. No throat-clearing, no warm-up, no greetings.
@@ -254,6 +254,19 @@ branded section names. Questions as headers are a strong pattern: "How did it co
 "Why is it important?", "What alternatives were considered?", "Isn't it due to Sidekiq's window
 limiter?"
 
+There are two header registers, and they behave differently:
+
+- **Top-level structural headers are plain nouns**: `Overview`, `Problems`, `Objectives`,
+  `Proposal`, `Requirements`, `Risks / Dependencies`, `Appendix`, `Next steps`. These say what
+  part of the document the reader is in. Don't get creative here.
+- **Subsection headers carry the argument**: a question the reader would ask, or a claim.
+  "Why do we use different teams per case?", "Payoutable isn't expressive", "How much does it
+  cost? Can we add metrics freely?", "'Retries will solve transient network errors without side
+  effects'".
+
+The test: someone who reads only the subsection headers should get the argument. If a subsection
+header is a bare noun like "Considerations" or "Details," it is doing no work.
+
 **Bold lead-in labels** within bullet points create scannable structure without adding more header
 levels: "**Observability:** The first step is..." / "**Centralized vendor abstractions:** create
 a common interface..."
@@ -261,14 +274,115 @@ a common interface..."
 **Blockquotes** are for asides, caveats, context, and quoted material. Never for emphasis or
 pull-quotes.
 
-**Appendix or FAQ sections** can use questions as headings. This is a good pattern for anticipating
-objections: "What's the point of recording metrics if we don't define thresholds?"
+**Give the reader's objection its own section.** This is the single most characteristic move in
+Alex's documents, and it is why they read as a colleague reasoning rather than a manager ruling.
+Don't rebut an objection in passing; give it real estate and a heading in the sceptic's own
+words, then answer in one to three sentences. Real examples: "What estimates are not?",
+"Exceptions", "Risks / Dependencies", "Open Questions", "What's the point of recording metrics if
+we don't define thresholds? Is it actionable at all?", and a whole `# Questions` FAQ forming the
+back half of a brief ("How is this different than Catalog's Product Status research?").
+
+Write the objection you'd least like to be asked. If the draft has no section like this, it is
+probably not finished.
+
+**Keep evidence in its own section, separate from the problem.** State the problems, then prove
+them: named incidents with dates, linked Slack threads, screenshots, Asana tasks. Don't interleave
+claim and proof.
+
+**Open a problem section with someone else's words when you can.** An attributed, linked quote
+from a teammate makes the problem a felt pain rather than the author's opinion: "the recurring
+question I asked myself was 'how do I know that the release went fine?', and I didn't have a good
+answer" - Julie Mao.
+
+**Declare the fidelity level** so reviewers critique the right layer: "low resolution diagram",
+"pre-wireframes", "We can discuss variable names and code specifics, but I'm more interested here
+about the boundaries between business, infra and vendor."
+
+**Caption screenshots with an argument**, not a description. "We pay around $30-$50/month
+currently with 678 metrics" beats "Datadog billing page."
+
+**Mark applicability inline in step titles** so readers can skip safely: `[async-only]`,
+`[optional]`.
+
+**Borrow authority when a claim needs to stick.** Anchor to something the reader already accepts
+rather than asserting it yourself: Ron Jeffries on accidental difficulty, GitHub Pull Requests as
+the model for a two-step approval flow, Shape Up breadboarding. Cite the source.
 
 **Mermaid diagrams** are preferred when the platform supports them. Use them for flows, lifecycles,
 and system relationships.
 
 **Horizontal rules** (`---`) separate the tl;dr from the body, and mark major structural
 transitions. Use them sparingly.
+
+### Document Shapes
+
+Decide which of these the document is before drafting. The wrong shape is a bigger problem than
+any sentence-level issue.
+
+**How-to / runbook**: for a reader who has already decided and needs to act.
+`tl;dr` → why this matters → numbered or bolded steps → best practices. No Problems section: the
+problem is settled. Carries code, copy-able names, concrete numbers, and good/bad pairs
+("Prefer `api.request` with tags `method:get,vendor:lithic` rather than `api.lithic.get`").
+Give the one threshold you're confident in and hand the rest back: "For InComm, we use 60secs
+threshold. Discuss with the team about the best course of action."
+
+**Brief**: for a reader who could say no.
+`Objectives` → `Problems` → `Proposal` → `Questions` or `Appendix` → `Next steps`. Objectives
+before Problems, so it reads as a proposal rather than a complaint. The back half absorbs
+objections. Be deliberately vague about exact names and thresholds, and defend that vagueness as
+scope control.
+
+**A list of named metrics, tags and thresholds is not a brief.** That belongs in a child page
+titled `Proposal: ...` hanging off the brief. The brief's job is to establish the problem is real,
+fence the scope, and pre-answer objections.
+
+**Vision / product proposal**: problem-first argument for building something.
+`Overview` (bolded thesis lines) → `Problem Statement` → `Supporting Evidence` → `Users` →
+`User / Design Stories` → `Requirements` → `Risks / Dependencies` → `Appendix / Open Questions`.
+Name the new concept explicitly, define its lifecycle as a state machine, and gloss every state.
+Vocabulary is the deliverable.
+
+**Roadmap / initiative**: a living umbrella for multi-month work.
+`Background` (business cost in the first sentence) → `Objectives` → out-of-scope callout →
+`Project proposal` (scoping, phased execution) → `Technical Problems` (one subsection per named
+smell, at the identifier level, with permalinks). Let the phasing come from a stated past failure
+rather than listing risks abstractly.
+
+**Primer / "start here"**: orient a newcomer to a complex domain.
+Chronology first, architecture second: walk the lifecycle 1→4, then explain why it is built that
+way. Map business jargon to code jargon out loud ("customers call auto-redemption
+'Push-payments', but we keep it auto-redemption in the code"). Make every "how do we know X is
+working" answer a live link, so the doc is a launcher rather than a description.
+
+**Position / norm**: argue a practice without preaching.
+Benefits before expectations, always. Name the reader's fear in a section of its own. State
+personal stakes in first person ("You won't earn points with me if you're responding during
+time-off"). Name who overrides you ("Company-wide expectations override the list above"). End on
+mechanics that remove the last excuse.
+
+**Hard-won lessons list**: the "falsehoods programmers believe" genre.
+Each heading is the wrong belief, quoted. Each body is the correction, with named vendors, dates,
+and receipts. One aphorism per section, then the specifics: "Documentation is a map, not the
+territory."
+
+### Living Documents
+
+Alex's documents are maintained in place rather than rewritten, and that is deliberate.
+
+- **Stamp updates on top of the original**: `**Update 2025:** the majority of the work is done.
+  There are a couple vendors pending (DavinciPay, Lithic).` Don't rewrite the original text; the
+  document is a time-series, not a snapshot.
+- **Keep rejected alternatives**, collapsed in a `<details>` block, with the evidence that killed
+  them.
+- **List what you are explicitly deferring, and why**: "Vendor thresholds and alerts: we don't
+  have a full picture of the recipient experience to confidently define what thresholds should be
+  today."
+- **Say "I don't know" in first person** where it's true: "Traces are hard."
+
+**Do not imitate the rough edges.** Several published documents contain typos, sentences that
+trail off mid-word, and headings with nothing under them. Those are artifacts of shipping under
+time pressure, not style. Ship a document with a `TBD` marker or an open question stated as a
+question, never with a broken sentence or an empty heading.
 
 ### Formatting Preferences
 
@@ -281,7 +395,13 @@ transitions. Use them sparingly.
 - Footnotes with `[1]` markers are acceptable for supplementary detail.
 - Use "aka" lines in italics under proposal titles to bridge informal names from meetings/Slack
   to the formal document: *aka event markers, aka subway lines*
-- Tables are fine when comparing structured data, but don't force them.
+- **Bold-lead bullets are the workhorse unit, not tables.** `**Short label:** one-sentence
+  explanation`, in parallel runs of three to seven. Across eleven of Alex's published documents
+  there is not a single markdown table. Tables are allowed when genuinely comparing structured
+  data across two or more axes, but reach for bullets first: if the "table" would have one column
+  of labels and one of explanations, it is a bullet list.
+- Prose carries reasoning; bullets carry anything enumerable. A paragraph longer than three lines
+  is rare.
 
 ### Lint
 
@@ -322,6 +442,12 @@ These apply only to documents, in addition to the shared anti-patterns above.
 4. **Numbered lists where bullets would do.** Only number when sequence matters.
 5. **Colon after tl;dr.** It's `**tl;dr** the summary goes here`, not `**tl;dr:** the summary`.
 6. **ALL CAPS for TL;DR.** Always lowercase: `tl;dr`.
+
+### Reference Documents
+
+Eleven of Alex's published Notion docs, grouped by shape, are linked with notes on what each one
+teaches in the `tremendous-notion-doc-composition` skill. When the shape of a document matters
+more than its sentences, open the closest exemplar there before drafting.
 
 ### Document Examples
 

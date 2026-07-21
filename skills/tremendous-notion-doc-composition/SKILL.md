@@ -1,6 +1,6 @@
 ---
 name: tremendous-notion-doc-composition
-description: "Compose a document in Alex's private Notion Documents database. Use when Alex says /tremendous-notion-doc-composition, or asks to write, draft, or start a doc in Notion — for example 'write a doc about X in Notion', 'draft this in Notion', 'put this in my docs database'. Also use when he asks where a doc should live, or shares a page from the Documents database."
+description: "Compose a document in Alex's private Notion Documents database. Use when Alex says /tremendous-notion-doc-composition, or asks to write, draft, or start a doc in Notion: for example 'write a doc about X in Notion', 'draft this in Notion', 'put this in my docs database'. Also use when he asks where a doc should live, or shares a page from the Documents database."
 argument-hint: "<doc topic or source material>"
 ---
 
@@ -13,7 +13,7 @@ in that database, with the right properties, in his voice.
 
 | Item | Value |
 |---|---|
-| Database | **Documents** — https://app.notion.com/p/3cbb8d8d6d4d4a11b387807ad7e1787e |
+| Database | **Documents**: https://app.notion.com/p/3cbb8d8d6d4d4a11b387807ad7e1787e |
 | Data source | `collection://1f280be5-fa2e-4d39-94d1-c155edd39d08` |
 | Parent page | Alex Private Notes |
 
@@ -62,10 +62,13 @@ one-sentence statement of what the doc does. Nothing opens with background, scen
 or "as we all know". *Recording Datadog Metrics* opens `tl;dr prefer metrics in monitors and
 dashboards, over logs and traces.`
 
-**Headings are questions or claims, never nouns.** "Why do we use different teams per
-case?", "Payoutable isn't expressive", "'Retries will solve transient network errors without
-side effects'". A reader who reads only the headings must still get the argument. Avoid
-"Overview", "Background", "Considerations" as headings unless the content really is that.
+**Subsection headings carry the argument.** Top-level structural headings are plain nouns
+(`Overview`, `Problems`, `Objectives`, `Proposal`, `Requirements`, `Appendix`, `Next steps`),
+and say what part of the doc the reader is in. Subsection headings are questions the reader
+would ask, or claims: "Why do we use different teams per case?", "Payoutable isn't
+expressive", "'Retries will solve transient network errors without side effects'". Someone
+reading only the subsection headings should get the argument. A subsection called
+"Considerations" is doing no work.
 
 **Use bold-lead bullets, not tables.** None of his docs uses a markdown table. The workhorse
 unit is `**Short label:** one-sentence explanation`, in parallel runs of three to seven.
@@ -85,7 +88,7 @@ modifications where necessary." Fence it, then leave the escape hatch.
 **Anchor every general claim to a specific.** A vendor name, a class name, a dated incident, a
 SHA-pinned GitHub permalink with line numbers, a Datadog dashboard, a Slack thread, a real
 number. Authority comes from specificity, not from position. Where there is no anchor, say
-so — he ships "(can't find the message right now, sorry)" rather than quietly dropping the
+so: he ships "(can't find the message right now, sorry)" rather than quietly dropping the
 claim.
 
 **Why before how, always.** The motivation section precedes the instruction section in every
@@ -102,10 +105,17 @@ as live." The reason to comply is always visible.
 Requests as the model for case-run approval, Shape Up breadboarding. Anchor to something the
 reader already accepts rather than asserting.
 
-**Docs are living and openly unfinished.** Progress is stamped on top as `UPDATE June 2025:`
-callouts rather than rewriting the original. Rejected alternatives stay in collapsed
-`<details>` blocks with the screenshots that killed them. Stub headings ship. Optimise for
-the doc existing and staying current over the doc being finished.
+**Docs are living, and unresolved parts are named as such.** Progress is stamped on top as
+`UPDATE June 2025:` callouts rather than rewriting the original. Rejected alternatives stay
+in collapsed `<details>` blocks with the screenshots that killed them. What is deferred is
+listed with the reason: "we don't have a full picture of the recipient experience to
+confidently define what thresholds should be today." Optimise for the doc existing and
+staying current over the doc being finished.
+
+Do not imitate the rough edges. Some published docs contain typos, sentences that trail off
+mid-word, and headings with nothing under them. Those are artifacts of shipping under time
+pressure, not style. Ship a `TBD` marker or an open question stated as a question, never a
+broken sentence or an empty heading.
 
 **Never write a conclusion.** Every doc ends in something actionable or something unresolved:
 tips, a screenshot of the menu, next steps, open questions, an appendix of raw notes.
@@ -113,52 +123,52 @@ tips, a screenshot of the menu, next steps, open questions, an appendix of raw n
 **Register is light and dry, never jokey or corporate.** Emoji in the page icon and sometimes
 prefixing H2s. "Yeah, that might not be true." "Those pesky Net::ReadTimeout." "Trivia:".
 
-## Reference docs — pick a shape before you write
+## Reference docs: pick a shape before you write
 
 Read the one or two closest to the request before drafting. Match the shape; do not copy the
 content.
 
-**How-to / runbook** — for a reader who has already decided and needs to act. Shape:
+**How-to / runbook**: for a reader who has already decided and needs to act. Shape:
 `tl;dr` → why → numbered or bolded steps → best practices. No Problems section, because the
 problem is settled. Contains code, copy-able names, concrete numbers, good/bad pairs.
 
-- [Recording Datadog Metrics](https://app.notion.com/p/tremendous/Recording-Datadog-Metrics-13a03136bd8c4ba6b218967de820279c) — the model how-to. Good/bad naming pairs, a blunt prohibition ("`tag:#{payout_id}` is a big-red no"), and cost treated as a design constraint with a real number.
-- [Catalog vendor delays and Datadog metrics](https://app.notion.com/p/tremendous/Catalog-vendor-delays-and-Datadog-metrics-100eed2e0068808fa6d0ebd8aab498dc) — the narrow applied sibling. Note the `[async-only]` and `[optional]` prefixes on step titles so readers can skip safely, and how he refuses to over-prescribe thresholds.
-- [Writing a #tremendous-releases message in Slack](https://app.notion.com/p/tremendous/Writing-a-tremendous-releases-message-in-Slack-e934b8adc6044d269bf2ac95a3981c7f) — house style guide. Every rule carries its consequence; examples are bare links, not prose.
+- [Recording Datadog Metrics](https://app.notion.com/p/tremendous/Recording-Datadog-Metrics-13a03136bd8c4ba6b218967de820279c): the model how-to. Good/bad naming pairs, a blunt prohibition ("`tag:#{payout_id}` is a big-red no"), and cost treated as a design constraint with a real number.
+- [Catalog vendor delays and Datadog metrics](https://app.notion.com/p/tremendous/Catalog-vendor-delays-and-Datadog-metrics-100eed2e0068808fa6d0ebd8aab498dc): the narrow applied sibling. Note the `[async-only]` and `[optional]` prefixes on step titles so readers can skip safely, and how he refuses to over-prescribe thresholds.
+- [Writing a #tremendous-releases message in Slack](https://app.notion.com/p/tremendous/Writing-a-tremendous-releases-message-in-Slack-e934b8adc6044d269bf2ac95a3981c7f): house style guide. Every rule carries its consequence; examples are bare links, not prose.
 
-**Brief** — for a reader who could say no. Shape: `Objectives` / `Problems` / `Proposal` /
+**Brief**: for a reader who could say no. Shape: `Objectives` / `Problems` / `Proposal` /
 `Questions` or `Appendix` / `Next steps`. Cites Slack threads and teammate quotes as evidence
 that the problem is real, spends its back half absorbing objections, and ends by handing off.
 
-- [Catalog Monitoring: Metrics and Alerts for Disruption](https://app.notion.com/p/tremendous/Catalog-Monitoring-Metrics-and-Alerts-for-Disruption-ef02483f601a4038a1af57e886b21a71) — tactical brief (2024). Objectives *before* Problems, so it never reads as a complaint. The `# Questions` FAQ is the model for absorbing objections.
-- [Catalog redemption monitoring brief](https://app.notion.com/p/tremendous/Catalog-redemption-monitoring-brief-1b2eed2e006880aebb90d3789c62bf51) — strategy brief (2025), one level up from the above. Opens Problems with a teammate's attributed quote, not his own claim. The Appendix gives the sharpest objection its own heading and answers it.
+- [Catalog Monitoring: Metrics and Alerts for Disruption](https://app.notion.com/p/tremendous/Catalog-Monitoring-Metrics-and-Alerts-for-Disruption-ef02483f601a4038a1af57e886b21a71): tactical brief (2024). Objectives *before* Problems, so it never reads as a complaint. The `# Questions` FAQ is the model for absorbing objections.
+- [Catalog redemption monitoring brief](https://app.notion.com/p/tremendous/Catalog-redemption-monitoring-brief-1b2eed2e006880aebb90d3789c62bf51): strategy brief (2025), one level up from the above. Opens Problems with a teammate's attributed quote, not his own claim. The Appendix gives the sharpest objection its own heading and answers it.
 
 **Important:** a list of named metrics, tags and thresholds is **not** a brief. In his usage
 that is a child page titled `Proposal: ...` hanging off a brief. The brief's job is to
 establish the problem is real, fence the scope, and pre-answer objections.
 
-**Vision / proposal** — problem-first product argument. Shape: `Overview` (bolded thesis
+**Vision / proposal**: problem-first product argument. Shape: `Overview` (bolded thesis
 lines) → `Problem Statement` → `Supporting Evidence` → `Users` → `Stories` → `Requirements` →
 `Risks / Dependencies` → `Appendix / Open Questions`.
 
-- [Class-Action Case-Runs Vision](https://app.notion.com/p/tremendous/Class-Action-Case-Runs-Vision-62df7ee8ed534d61b6e108b3fee6988e) — evidence kept in its own section, separate from the problem. Names the new concept (`CaseRun`), defines its state machine, and borrows GitHub PRs as a mechanism the audience already trusts. Declares fidelity ("low resolution diagram") so reviewers critique the right layer.
+- [Class-Action Case-Runs Vision](https://app.notion.com/p/tremendous/Class-Action-Case-Runs-Vision-62df7ee8ed534d61b6e108b3fee6988e): evidence kept in its own section, separate from the problem. Names the new concept (`CaseRun`), defines its state machine, and borrows GitHub PRs as a mechanism the audience already trusts. Declares fidelity ("low resolution diagram") so reviewers critique the right layer.
 
-**Roadmap / initiative** — a living umbrella doc for multi-month work.
+**Roadmap / initiative**: a living umbrella doc for multi-month work.
 
-- [Roadmap: vendor refactoring (2025)](https://app.notion.com/p/tremendous/Roadmap-vendor-refactoring-2025-11beed2e006880929436c3744c76848a) — opens on business cost in the first sentence. A non-goals callout, `UPDATE:` stamps layered over the original, rejected alternatives collapsed with the screenshots that killed them, and problems named at the identifier level with permalinks.
+- [Roadmap: vendor refactoring (2025)](https://app.notion.com/p/tremendous/Roadmap-vendor-refactoring-2025-11beed2e006880929436c3744c76848a): opens on business cost in the first sentence. A non-goals callout, `UPDATE:` stamps layered over the original, rejected alternatives collapsed with the screenshots that killed them, and problems named at the identifier level with permalinks.
 
-**Primer / "start here"** — orient a newcomer to a complex domain.
+**Primer / "start here"**: orient a newcomer to a complex domain.
 
-- [Class-Action 101 for engineers](https://app.notion.com/p/tremendous/Class-Action-101-for-engineers-start-here-169eed2e00688031a4e4dc68c5b30d1a) — teaches chronology first (walk the lifecycle 1→4), architecture second. Maps business jargon to code jargon explicitly. Every "how do we know X works" answer is a live link, so the doc is a launcher rather than a description.
+- [Class-Action 101 for engineers](https://app.notion.com/p/tremendous/Class-Action-101-for-engineers-start-here-169eed2e00688031a4e4dc68c5b30d1a): teaches chronology first (walk the lifecycle 1→4), architecture second. Maps business jargon to code jargon explicitly. Every "how do we know X works" answer is a live link, so the doc is a launcher rather than a description.
 
-**Position / norm / culture** — argue a practice without preaching.
+**Position / norm / culture**: argue a practice without preaching.
 
-- [Estimates: the why, the how, the what](https://app.notion.com/p/tremendous/Estimates-the-why-the-how-the-what-4ad510d640e14bc9981ef08b1edc3300) — the title is the outline. A whole section named for the reader's fear ("What estimates are not?"). Symmetric failure analysis, so reflection reads as diagnostic rather than accusatory.
-- [Disconnecting from Work](https://app.notion.com/p/tremendous/Disconnecting-from-Work-19031a65c7454f4083f7d934ea6e60cc) — benefits before expectations, always. First-person stakes ("You won't earn points with me if you're responding during time-off") instead of institutional voice. Ends on four clicks and a screenshot, removing the last excuse.
+- [Estimates: the why, the how, the what](https://app.notion.com/p/tremendous/Estimates-the-why-the-how-the-what-4ad510d640e14bc9981ef08b1edc3300): the title is the outline. A whole section named for the reader's fear ("What estimates are not?"). Symmetric failure analysis, so reflection reads as diagnostic rather than accusatory.
+- [Disconnecting from Work](https://app.notion.com/p/tremendous/Disconnecting-from-Work-19031a65c7454f4083f7d934ea6e60cc): benefits before expectations, always. First-person stakes ("You won't earn points with me if you're responding during time-off") instead of institutional voice. Ends on four clicks and a screenshot, removing the last excuse.
 
-**Hard-won lessons list** — the "falsehoods programmers believe" genre, in-house.
+**Hard-won lessons list**: the "falsehoods programmers believe" genre, in-house.
 
-- [Falsehoods about vendor integrations](https://app.notion.com/p/tremendous/Falsehoods-about-vendor-integrations-5b44f18df98941fbb8a91b56de73a8ca) — each heading is the *wrong* belief in quotes; each body is the correction. Skimming the headings alone gives the whole doc. Receipts in collapsed `<details>` blocks. One aphorism per section, then the specifics: "Documentation is a map, not the territory."
+- [Falsehoods about vendor integrations](https://app.notion.com/p/tremendous/Falsehoods-about-vendor-integrations-5b44f18df98941fbb8a91b56de73a8ca): each heading is the *wrong* belief in quotes; each body is the correction. Skimming the headings alone gives the whole doc. Receipts in collapsed `<details>` blocks. One aphorism per section, then the specifics: "Documentation is a map, not the territory."
 
 ## Drafting is not posting
 
