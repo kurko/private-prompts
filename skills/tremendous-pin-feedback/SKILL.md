@@ -93,6 +93,10 @@ Be concise. Return facts, not opinions.
 - Links to CI/CD runs or deployment logs
 - External links (vendor docs, blog posts, etc.)
 
+### Context-only links
+
+The user may mark a link as "for your context, not for the pin" (commonly a DM or a private thread). Read it and let it inform the feedback. Default to not citing, quoting, or attributing its content in the feedback text — especially for DMs. The escape hatch: including the link itself in the body as a footnote-style reference is fine when it carries important additional context (e.g., the consequences of the behavior), since that helps later when collecting everything for the semester's perf review cycle.
+
 ## Context Gathering
 
 When reading the source content (including content from followed links), extract and note:
@@ -116,6 +120,24 @@ A reply is **substantive** if it describes an impact, asks a question, or adds n
 - ❌ Ignore: emoji reactions alone
 
 If substantive interactions exist, summarize them at the end of the feedback (e.g., "In this case, John Doe noted that the update helped them plan their work accordingly.").
+
+### Edited content and timelines
+
+Slack messages and GitHub PR/issue descriptions are mutable, and GitHub marks them with an "edited" indicator (Slack shows "(edited)"). When the feedback is about *how or when* something was communicated — an announcement, a PR description, a status update — the current text may not be what people saw at the time.
+
+- Check for the edited indicator. On GitHub, edit history is available via the GraphQL `userContentEdits` connection on the PR/issue.
+- If the artifact was edited after the fact and the timeline is load-bearing for the feedback, do not assert what it "said" when reviews were requested. Flag the uncertainty in the final report so the user can confirm, and keep the unverifiable claim out of the feedback text.
+
+Real case: a pin credited a PR description with a "sorry for this long PR" note, but that note was added only after the user's 1-1 with the author. The corrected feedback told the opposite story: the acknowledgment was missing at review time and appeared reactively.
+
+### PR-size and habit claims
+
+When the feedback characterizes someone's PR habits (size, frequency, decomposition), gather the numbers before writing:
+
+- Pull concrete size: `gh pr view <n> --repo <org/repo> --json additions,deletions,changedFiles`.
+- Look for precursor or sibling PRs that show the person did split work out (the PR description often references them). A large PR next to a small extracted one tells a fairer story than the large PR alone.
+
+Specific figures ("around 1,900 lines across 41 files") and credit for the splitting they did do make constructive feedback land as fair rather than as an impression.
 
 ## Career Ladder Context
 
