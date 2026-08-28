@@ -75,7 +75,15 @@ These are mandatory — they reflect the user's actual writing voice.
 
 8. **Length:** The whole write-up fits in roughly half a page (~350 words). Don't re-describe the exercise artifact in detail; reviewers can click the link, and a detailed summary is expensive to verify against the source. Spend the words on judgment signals (how the candidate thinks, decides, communicates), not inventory.
 
-9. **Raw notes ride along in Ashby:** Alex usually pastes his raw notes at the bottom of the Ashby entry. The write-up doesn't need the full content of the meeting, only the highlights that weigh on the decision.
+9. **Raw notes ride along in Ashby:** Alex always pastes his raw notes at the bottom of the Ashby entry. The write-up doesn't need the full content of the meeting, only the highlights that weigh on the decision. So keep each narrative paragraph to 3-5 short sentences. Anything a reader can get from the raw notes below, or from clicking the exercise link, does not belong in the paragraph. If a paragraph is running long, the cut is almost always detail that is already sitting in the raw notes.
+
+10. **ASD-STE100 sentence style (the standard since 2026-07):** Short sentences, roughly 20 words max. Active voice. One idea per sentence. Plain words over long ones. Alex prefers this over the looser prose of earlier write-ups; it keeps the report focused. Apply the spirit, not the aerospace dictionary.
+
+11. **Cut redundant micro-conclusions.** Don't end a fact with a clause that only concludes what the reader just read ("At work he reviews AI-first, so the written catch rate is not his eye alone" — the second half adds no information). Keep a trailing clause only when it adds something new. Small factual asides go in parentheses: "(at work he reviews AI-first)".
+
+12. **Name the real defect.** When a con involves a sequence of events, blame the actual problem, not the sequence. "He hand-waved what bad code is" is the defect; "he only defined it after I pushed" is not — needing a push is normal, a weak definition is the signal.
+
+13. **Describe a directive tone; don't prescribe questions.** When a candidate's review feedback is all mandates ("We need to..."), describe that posture and contrast it with constructive framing: "felt like directives rather than constructive feedback." Never write that the candidate should have asked questions instead. A manager doesn't always need to ask; with trust built, directives land fine, and the interview can't show that relationship context. If the phrasing is hostile or disrespectful, say so plainly — that's an observation, not a prescription. (Alex's correction, 2026-08-25.)
 
 ## Placeholders
 

@@ -6,7 +6,7 @@ argument-hint: "[candidate-name-or-pr-url]"
 
 # PR Review Interview: Prep & Scorecard
 
-This skill is a wrapper around the team's Notion doc. The doc owns the interview content: format, rubric, official discussion questions, and the answer key. This skill owns Alex's workflow: fetching that content, writing prep into the daily note, the Q:/A: format, the scoring outputs, and write-up conventions. Never duplicate doc content into this skill; an earlier version hardcoded a 12-issue answer key while the doc had grown to 15 issues, and scoring drifted.
+This skill is a wrapper around the team's Notion doc. The doc owns the interview content: format, rubric, official discussion questions, and the answer key. This skill owns Alex's workflow: fetching that content, writing prep into the daily note, the question format, the scoring outputs, and write-up conventions. Never duplicate doc content into this skill; an earlier version hardcoded a 12-issue answer key while the doc had grown to 15 issues, and scoring drifted.
 
 ## Source of truth: the Notion doc
 
@@ -45,29 +45,30 @@ Each candidate gets their own repo: `tremendous-interviews/pr-review-interview--
 
 **Questions to include**, in this order: Alex's standing opener "In a long PR, how do you prioritize what you're going to focus on?" (from the bank below), then the doc's "ship fast vs. code quality" question (Alex's priority among the doc questions), then the rest of the doc's questions. Pull the exact wording and good-signal notes from the doc and reference the questions by topic here; never paste their text into this skill. The discussion slot is only 15 minutes, so the scaffold lays out all of them and Alex picks which to ask live.
 
-**Q:/A: format.** During the call Alex arrows down from the Q line and types straight after `A: `; bold or quoted questions make that slower:
+**Question format.** During the call Alex arrows down from the Q line and types straight after the `- `; bold or quoted questions make that slower:
 
 ```
 Q: The question goes here? _(Good signal: taken from the doc)_
-A: 
+- 
 ```
 
 - Plain `Q: ` prefix, question on a single line, signal note in italics on the same line.
-- `A: ` left blank (trailing space), blank line between pairs.
+- The answer is a bullet list under the question: one empty `- ` (trailing space), blank line between pairs. Alex types the answer as bullets and adds more as the candidate talks, so a bare `A: ` line would fight him.
 
 **Live-editing caution.** On interview days Alex types in the daily note while you edit it. If Edit fails with "file modified", re-read and retry with a small, stable anchor. If he is actively typing and the target spot is the end of the file, append with a `cat >> file <<'EOF'` heredoc instead; an append cannot clobber his text.
 
-Skeleton (lay out every section up front, so each has a home before the call: Final report, the PR Review Scorecard, and Meeting transcripts get filled during scoring, His questions while Alex talks with the candidate). The scorecard and transcript sit below Post call notes on purpose, so Alex can copy from Final report through Post call notes into Ashby without them:
+Skeleton (lay out every section up front, so each has a home before the call: Final report, the PR Review Scorecard, and Meeting transcripts get filled during scoring, His questions while Alex talks with the candidate). The scorecard and transcript sit below Post call notes on purpose, so Alex can copy from Final report through Post call notes into Ashby without them. The PR link sits inside Final report, under the `**tl;dr**` line, so that copy carries the link to the candidate's review; only the rubric link stays in the header:
 
 ```markdown
 # <Candidate Name> PR Review interview
 
 Rubric: https://app.notion.com/p/tremendous/Interview-PR-review-bf2745b48d5e4101891e7f39321e0048
-PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1
 
 ## Final report
 
-tl;dr
+**tl;dr**
+
+PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1
 
 ## Raw notes
 
@@ -76,7 +77,7 @@ tl;dr
 - 
 
 Q: ...
-A: 
+- 
 
 His questions
 - 
@@ -160,14 +161,14 @@ Prompt template (insert the candidate repo and the answer key fetched from Notio
 > 1. Per issue: caught (✅), partial (⚠️), or missed (❌), with a short quote when caught.
 > 2. Extra findings not in the answer key.
 > 3. Tone rating: Excellent / Good / Needs work / Concerning, with examples.
-> 4. Independent verdict: Strong No / No / leaning Yes / Yes / Strong Yes, plus a 2-sentence rationale.
+> 4. Independent verdict: Strong No / No / leaning No / leaning Yes / Yes / Strong Yes, plus a 2-sentence rationale.
 >
 > ANSWER KEY (from the team Notion doc):
 > [paste the fetched PR issues scorecard section]
 
 **D. The Granola transcript of the call.** Alex records interviews with Granola. Load the Granola MCP tools via ToolSearch ("granola"). If only `mcp__granola__authenticate` appears, the server isn't connected; don't block scoring on that. Proceed without the transcript and tell Alex he can connect with `/mcp` and ask for it again.
 
-With the MCP connected: find the call with `mcp__granola__list_meetings` (custom time range covering the interview date), match by candidate name or meeting time, then fetch the content with `mcp__granola__get_meetings`. If the server exposes a dedicated transcript tool, prefer it over the summary; tell Alex which you got (full transcript vs. Granola summary).
+With the MCP connected: find the call with `mcp__granola__list_meetings` (custom time range covering the interview date), match by candidate name or meeting time, then pull the verbatim transcript with `mcp__granola__get_meeting_transcript` (pass the meeting UUID). Use the transcript, not `get_meetings` summaries: the discussion is the strongest evidence for discussion credit, and the AI summary drops the exact wording scoring turns on. The transcript is a rough auto-transcription; recover garbled names and jargon from context.
 
 ### Step 2: Score (main agent)
 
@@ -187,10 +188,12 @@ Rate: **Excellent** / **Good** / **Needs work** / **Concerning**.
 ### Step 4: Outputs
 
 Write A, B, and E into the candidate's section in the daily note (mind the live-editing caution above). Prep already laid out the headings, so fill them rather than appending new ones:
-- B (final report) fills the `## Final report` section, replacing the `tl;dr` placeholder.
+- B (final report) fills the `## Final report` section, replacing the `**tl;dr**` placeholder. Leave the PR link that sits below it in place.
 - A (scorecard) fills the `### PR Review Scorecard (AI)` section, which prep places below Post call notes so Alex can copy the report through Post call notes into Ashby without it.
 - E (transcript) fills the `### Meeting transcripts (Granola)` section at the end.
 Match an existing heading even if it is a close variant (a different heading level, or `### Meeting transcripts` without the suffix); only create a section if the note predates this scaffold and lacks it. If the live discussion hasn't happened yet, show A and B in chat instead and fill them once the call is done. C stays in chat only.
+
+**Compare-notes flow.** Right after the call, Alex often asks for the scorecard while he writes his Post call notes in parallel, so the two verdicts form independently. When he says he'll write his notes now and compare after (or asks for scoring before his post call notes are done): fill A and E in the note immediately, but HOLD B (the final report). Present the scorecard and the subagent's second opinion in chat, compare them against his notes once he's done writing, and only then draft the final report so it reflects the comparison instead of anchoring him. If his verdict and the independent read disagree, name the disagreement explicitly per C; that comparison is the point of the flow.
 
 **A. Scorecard** (bullet style, matching how past scorecards read in the daily notes):
 
@@ -218,7 +221,7 @@ Keep the write-up to about half a page. The scorecard above carries the detail; 
 2. **Verdict gap**: if its verdict differs from yours, explain what Alex's notes added or changed.
 3. **Challenges**: if the independent read contradicts Alex's notes (notes say "struggled" but the comments are clean and well-reasoned), say so directly. Catching bias is the point; don't smooth it over.
 
-**D.** If the live discussion is still ahead (empty `A: ` lines, no post-call notes), also output the questions and opening script.
+**D.** If the live discussion is still ahead (empty answer bullets under the Q lines, no post-call notes), also output the questions and opening script.
 
 **E. Meeting transcripts (Granola)**: fill the `### Meeting transcripts (Granola)` section at the end of the candidate's section with the transcript:
 
@@ -232,14 +235,13 @@ It is reference material for Alex only. Never include the transcript or verbatim
 
 ## Style Rules
 
-Same as `/tremendous-interview-notes`:
+Load `/tremendous-interview-notes` and follow its Style Rules; that skill's list is canonical. Don't restate its enumerations here (verdict options, words to avoid): a summary of the verdict options lived in this section and drifted — it dropped "leaning No", and the 2026-08-24 write-up came out as "No" where Alex meant "leaning No". Same failure mode as the hardcoded answer key.
 
-- The sentence after the tl;dr verdict is capitalized like a normal sentence; only the `tl;dr` label is lowercase
-- Verdict options: Strong No, No, leaning Yes, Yes, Strong Yes, on the fence
-- For referrals, lean toward Yes when on the fence
-- Words to avoid: "thoughtful", "conversationalist"
-- No em dashes anywhere
-- Use /alex-writing-at-work for voice
+Two reminders that can't drift: no em dashes anywhere, and use /alex-writing-at-work for voice.
+
+**The readers wrote the rubric.** Never explain the interview's own machinery back to them: no "this is a High in the answer key", no citing the doc's severity buckets or its "in this PR, look for" lines, no arguing why an issue matters in the abstract. Name the miss and move on. If a miss is high severity, say "she missed X" and let the reader weigh it; they built the scale.
+
+**One line per pro and per con, one claim each.** No stacking a justification onto a finding. If a con needs a paragraph to defend, it belongs in the scorecard or the second opinion, not in the write-up.
 
 ## Discussion Signals
 
