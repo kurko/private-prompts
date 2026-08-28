@@ -12,6 +12,114 @@ content for Notion, Slack, or Asana on Alex's behalf.
 
 These rules apply to all mediums: documents, Slack messages, task descriptions.
 
+### Get to the Point (company norm)
+
+Tremendous' handbook carries a doc by the CEO titled "Get to the point"
+(https://app.notion.com/p/tremendous/Get-to-the-point-2a0eed2e00688098ba68ed3c91d16ff9).
+Everything Alex publishes is read against that bar. It has two parts:
+
+1. **Have a point.** Know the one thing the reader must take away. If a sentence doesn't
+   serve it, cut the sentence.
+2. **Be concise.** Maximize signal per word. After drafting, do a cut pass that removes
+   real volume, not one that polishes.
+
+How that lands in practice, on top of the structure rules elsewhere in this skill:
+
+- **Lead with the conclusion, everywhere.** The tl;dr does it for the document. The first
+  line of each section does it for the section. Details come after the takeaway, never
+  before.
+- **A paragraph count is a length cap, not a format instruction.** "Write 3-5 paragraphs"
+  means keep it short. It does not mean dense paragraphs with no structure. Default to
+  scannable structure (headers that carry the argument, bold-lead bullets) at any requested
+  length. Use flowing prose only when Alex explicitly asks for prose, and even then keep
+  paragraphs under three lines.
+- **Critical details only.** Every detail in the body must support the point. Supplementary
+  material moves to an appendix or a collapsed section, or gets cut. In live conversation,
+  omit it and let people ask.
+- **The scan test.** A reader who reads only the headers and bold text should get the whole
+  argument. If they can't, restructure before polishing sentences.
+
+This section exists because a doc about directness once shipped as five dense paragraphs.
+The format contradicted the content, and Alex had to send it back.
+
+### Ban the Essayist Register (AI tells)
+
+LLM drafts fail in a specific register: the op-ed, the TED talk, the personal essay, the
+launch post. That register performs for the reader. A work note informs a busy colleague.
+The tells catalogued by Wikipedia's "Signs of AI writing" and Simon Willison's cliche
+highlighter are not dozens of separate habits; they are surface forms of the five moves
+below, all belonging to the performing register. The rule is the move, not the phrase
+list: a sentence making one of these moves in fresh wording is equally banned.
+
+Prevention happens at generation time, not review time. The fix for these sentences is
+deletion, deletion collapses the paragraphs built around them, and edit passes are bad at
+deleting, so a draft written in the performing register decays when repaired. Before
+writing a sentence, know which fact, decision, or reason it adds. If its job is emphasis,
+tension, pacing, a transition, or a verdict on a neighboring sentence, don't write it.
+There is no drama quota; a paragraph of plain facts is finished.
+
+For documents, write the fact skeleton first: the point in one line, then the facts as
+plain fragments, one per line. Wire them into sentences afterward. Rhetoric enters when
+sentences get composed before the facts are pinned down; starting from the skeleton
+leaves it nowhere to land.
+
+**The five moves:**
+
+1. **Verdict sentences.** A sentence that grades a neighboring sentence's importance
+   instead of adding information: "That's not nothing." "That's the whole game." "This
+   is the part that matters." "That's why it mattered." "Worth naming." Also the closing
+   zinger that scores the point just made: "You're half right, and the half that's wrong
+   is the one that matters." Never reword these; state the fact that makes the thing
+   matter, or cut. (Extends anti-patterns #10, #12.)
+
+2. **Setup and payoff.** Tension built for a reveal: "Here's the twist / catch / kicker."
+   "The punchline?" "Turns out..." "X is dead." "Don't call it X. Call it Y." The
+   stranded-auxiliary reversal ("The tool died; the data didn't."). "It's not X, it's Y"
+   and "not just X, but also Y." Deliver information in the sentence that raises it.
+   (Extends anti-patterns #10b, #18.)
+
+3. **Cadence emphasis.** Structure doing the work content should do: "No X, no Y, no Z"
+   chains; three or more sentences opening on the same word; consecutive sentences built
+   on the same skeleton ("A cart is an object in the system. A chat room is an object in
+   the system."); stacked rhetorical questions; a colon opening onto a tidy triple; the
+   rule of three wherever it pads ("innovative, scalable, and robust"). One item with a
+   number beats three with adjectives. (Extends anti-patterns #4, #9.)
+
+4. **Announced sincerity.** Naming the register instead of using it: "Let's be honest."
+   "I'll be blunt." "To be clear." "Look," as an opener. "You already know." "Don't take
+   my word for it." "Sit with that." Just say the thing.
+
+5. **Inflated abstraction.** Vocabulary and constructions that add significance while
+   removing information:
+   - Significance puffery: "stands as a testament", "plays a crucial role", "marks a
+     pivotal moment", "ever-evolving landscape", "rich tapestry", "underscores",
+     "delve", "multifaceted", "fostering".
+   - Copulative avoidance: "serves as", "functions as", "represents", "boasts", "holds
+     the distinction of being". Write "is", "are", "has".
+   - Vague linkage: "associated with", "in connection with". Name the actual relation
+     (who did what to whom).
+   - Vague authority: "experts argue", "observers have noted", "industry reports". Name
+     the person or drop the claim.
+   - Participle tails: "..., highlighting the importance of X", "..., reflecting broader
+     trends". End the sentence at the fact. (RAG-era models bolt these onto sources that
+     say no such thing.)
+   - Boilerplate outlook: "Despite these challenges", "remains to be seen", "time will
+     tell".
+
+Why models produce this: next-token prediction regresses to the mean, smoothing specific
+facts into generic significance (Wikipedia's example: the inventor of a train-coupling
+device becomes "a revolutionary titan of industry"), and feedback training rewards prose
+that performs engagement. The pull is always toward less specific and more exaggerated.
+Compensate in the opposite direction: more specific, less exaggerated.
+
+The lint script (see Lint) fails the high-confidence phrasings deterministically. Passing
+lint proves nothing about paraphrases; the five moves are the rule.
+
+Sources, for re-deriving or extending this section: Wikipedia's sign catalog at
+https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing and the 38 detector patterns
+in https://tools.simonwillison.net/llm-cliche-highlighter (view source; the `patterns`
+array has names, descriptions, and regexes).
+
 ### Voice and Tone
 
 Write as a senior engineer talking to peers. The tone is earnest, direct, and warm without being
@@ -29,10 +137,33 @@ casual. Think "coach addressing the team," not "manager issuing orders."
 - Never be sarcastic or ironic. The tone is sincere throughout.
 - Active voice strongly preferred. Build sentences around agents doing things: "We will build
   features," not "Features will be built."
+  - One carve-out: in feedback written to a person, passive voice and impersonal nouns are
+    allowed where the active version would point a finger. "The cost ends up being paid by
+    you" over "That's the real cost, and you pay it, not her." See **Feedback to a person**
+    under Document Shapes.
+  - Second carve-out, and it outranks the active-voice rule: a clause with a working verb
+    beats a compressed noun phrase, even when the clause is passive. "450k records were
+    rebuilt" over "a 450k-record rebuild." Rank: active verb > passive verb > nominalization.
+    See anti-pattern #17.
+- The target register is plain language: short declarative sentences, everyday words, verbs
+  doing the work. Not controlled language (no STE-style rules), and not feature journalism
+  (no elegant compression). When a sentence sounds like a New York Times writer instead of an
+  engineer talking, unpack it.
 
 ### Vocabulary and Word Choice
 
 Use plain, concrete language. Avoid corporate jargon and buzzwords.
+
+Use the team's own vocabulary for domain concepts: the words people actually type in Slack
+and PR titles ("stuck payouts", not "stranded payouts"). A synonym swapped in for variety
+reads foreign and breaks search (readers grep Slack and the codebase with the team's words).
+The test for any domain word: would a teammate say it in a standup?
+
+This generalizes beyond domain terms: use the same word for the same thing through the
+whole text. Cycling synonyms to dodge repetition ("the constraints of socialist realism"
+becoming "state-imposed artistic norms" two sentences later) is an LLM habit from
+repetition penalties, and it makes readers wonder whether the two phrases name different
+things. Repetition of the right word is not a defect.
 
 **DO use:**
 - "problem" (not "challenge" or "opportunity")
@@ -54,6 +185,8 @@ Use plain, concrete language. Avoid corporate jargon and buzzwords.
 - "synergize," "align" (overused), "optimize" (unless specifically about performance)
 - "leverage" (say "use")
 - "basically," "essentially," "actually," "really," "just" as filler
+- "strand" / "stranded" for payouts or rewards (say "stuck," the team's word, or "affected")
+- "inert" for code or PRs (say what it does: "changes nothing until we flip it on")
 - "stakeholders" (name the actual audience: "CSMs," "PMs," "business")
 - "utilize" (say "use")
 - "ensure" (say "make sure" or restructure)
@@ -76,7 +209,10 @@ Use plain, concrete language. Avoid corporate jargon and buzzwords.
   stumbled seriously," stays.)
 
 **Strong verbs Alex reaches for:** "catches," "flags," "triggers," "bubbles up," "masks,"
-"burns (money)," "spins up," "steps in," "doubles down," "shifts," "turns (that boat around)."
+"burns (money)," "spins up," "steps in," "doubles down," "shifts," "pokes (at)," "turns (that
+boat around)." "Pokes (at)" is Alex describing his own probing in a conversation ("I had to
+poke at it for her to say that"); a style reviewer once flagged it as colloquial and Alex put
+it back. Don't lint his own verbs away.
 
 ### How to Frame Problems
 
@@ -133,7 +269,9 @@ Propose solutions as directional bets, not blueprints. Invite the team to fill i
 
 ### Anti-Patterns
 
-These are AI writing habits that make text sound artificial. Avoid all of them.
+These are AI writing habits that make text sound artificial. Avoid all of them. The five
+moves in "Ban the Essayist Register" are anti-patterns too; the numbered list below adds
+Alex-specific rules and the hard cases that need more nuance than the family bans.
 
 1. **"It's important to note that..." / "It's worth mentioning..."** Just state the thing.
 2. **Hedging everything.** Only hedge where genuine uncertainty exists. (In chat, hedging relaxes
@@ -155,6 +293,15 @@ These are AI writing habits that make text sound artificial. Avoid all of them.
    one needs to become substantive.
 10. **Attitude over information.** Sentences like "That's it." or "End of story." convey tone
     but no content. Every sentence should tell the reader something they didn't know.
+10b. **Rhythm at the reader's expense.** The feedback-writing extension of #4 and #9. A
+    two-beat construction (setup then reveal, repetition then landing, a closing zinger) reads
+    as prosecution when the subject is the reader. Join the beats into one clause, or flatten
+    to neutral prose. The offending sentence usually passes every other test: concrete,
+    active, jargon-free, and still scoring a point. Examples, each with the fix Alex made:
+    "That's the real cost, and you pay it, not her." → "The cost ends up being paid by you."
+    "Julie read that as one callback to skip. `update_columns` skips all of them." →
+    join with "whereas", so the second half is a fact rather than a reveal.
+    "that's what wears on the people reviewing you" → "the people doing reviews."
 11. **Persuasive/sales voice.** Alex explains decisions through systemic reasoning, not
     rhetorical flair. Write like a coach walking through a decision, not a salesperson closing.
 12. **Empty framing labels.** "The gap:", "The catch:", "The kicker:", "Here's the thing,"
@@ -172,8 +319,10 @@ These are AI writing habits that make text sound artificial. Avoid all of them.
 15. **Figurative language where a plain assessment belongs ("this isn't poetry").** Report what
     happened; don't dress it up. Cut these classes:
     - Agentive verbs on abstract subjects: "instinct carried the catch rate," "experience
-      anchored his answers," "judgment drove the score." Abstractions don't act. Say "He has
-      strong instincts. The written catch rate was modest."
+      anchored his answers," "judgment drove the score," "her feedback tells rather than
+      asks." Abstractions don't act. Say "He has strong instincts. The written catch rate was
+      modest." Alex's fix for the feedback one: "her feedback felt like directives rather than
+      constructive feedback" (2026-08-25; he rejected the verb-contrast as not plain language).
     - Competitive or race framing: "where he separated himself," "stood out from the field."
       Measure against the bar, not an implied pack: "he did really well in the discussion."
     - Commercial idioms for engineering judgment: "nickel-and-diming," "penny-pinching,"
@@ -182,10 +331,36 @@ These are AI writing habits that make text sound artificial. Avoid all of them.
       State the fact ("he flagged he was rusty"); don't characterize the hustle.
     - Plain words over elevated stand-ins: "started with" over "led with," "did really well"
       over "excellent."
+    - Carve-out: everyday project-management verbs on work nouns are fine and Alex uses them
+      ("the effort closed out," "the project slipped," "discovery starts in September"). The
+      ban is on dramatized agency ("instinct carried the catch rate"), not on ordinary
+      schedule talk.
 16. **Proportionality phrases with no values.** "effort scaling with scope," "complexity
     commensurate with risk," "depth proportional to stakes" sound like insight but say nothing.
     State the actual relationship ("a one-line PR for a version bump, the full write-up for real
     work") or cut it. Litmus: if deleting the phrase loses no information, it carried none.
+17. **Noun stacks and nominalizations (journalistic compression).** Packing an event into an
+    attributive noun phrase reads like a headline writer, not an engineer: "a 450k-record
+    rebuild," "a same-day fix," "the uniqueness-token closure," "a full re-release." Unpack it
+    into a clause with a working verb: "450k records were rebuilt," "they fixed it the same
+    day," "we re-released it fully." A plain passive clause beats an elegant noun phrase (see
+    the second carve-out under Voice and Tone). Established two-noun terms are fine (gift
+    card, feature flag, class action); flag hyphenated measures acting as adjectives
+    ("450k-record," "five-month," "same-day") and any three-plus-noun compound doing a verb's
+    job. Litmus: if the head noun is a disguised verb (rebuild, fix, closure, release,
+    rollout), try the verb form; keep the noun only when the verb version is genuinely
+    clumsier. Scope: a measure modifying an ordinary noun is fine ("the five-month effort,"
+    "a one-week pilot"). The offense needs both the compression AND the disguised-verb
+    head noun ("a 450k-record rebuild," "a same-day fix").
+18. **Clever inversions where a plain capability statement belongs.** "Payouts got harder to
+    strand" scores style points by negating the failure mode; "Payout execution got more
+    robust" says the same thing and is cleaner, simpler, and legible. State the capability
+    directly; save the wit for parenthetical asides.
+19. **Comparative color without evidence.** "Funding was the hard part, not the API" claims a
+    comparison no source made — backing it would require research on both sides. State what
+    happened ("top-ups now run automatically through CurrencyCloud, and we tested them with a
+    canary threshold") and let the reader weigh it. Any "harder/easier/slower than" framing
+    needs evidence for both sides or it goes.
 
 To judge whether a sentence carries substance, useful smell tests: does it tell the reader
 something they didn't know, is a concrete actor doing a concrete thing, would deleting it
@@ -218,7 +393,10 @@ Use commas and parentheses for inline asides and clarifications. Parentheses are
 for qualifiers, examples, and counterpoints that shouldn't break the sentence flow:
 "(which is great proactivity)" / "(needs confirmation)" / "(e.g. InComm, Wogi)"
 
-Use colons to introduce explanations and lists. Use them freely.
+Use colons to introduce lists, labels, and bold lead-ins. Do NOT use a colon to join two
+independent clauses in narrative prose; connect the ideas with a comma and "and" instead.
+"The vendor moved slower than we did, as usual, and staging sat unfunded for months" over
+"The vendor moved slower than we did: staging sat unfunded for months."
 
 Avoid semicolons as a sentence-joiner. Break into separate sentences instead. One exception:
 a semicolon can separate items in an inline series when the items are multi-word phrases and
@@ -250,7 +428,8 @@ breathless and comma-heavy. It's a thesis statement, not a neutral abstract.
 their advantages, how-to's and recommended practices. Traces and Logs are not covered."
 
 **Section headers:** Use concrete nouns, action phrases, or reader questions. Never use clever or
-branded section names. Questions as headers are a strong pattern: "How did it come about?",
+branded section names. Sentence case, never Title Case (Title Case in headings is one of the
+strongest AI tells). Questions as headers are a strong pattern: "How did it come about?",
 "Why is it important?", "What alternatives were considered?", "Isn't it due to Sidekiq's window
 limiter?"
 
@@ -360,6 +539,44 @@ personal stakes in first person ("You won't earn points with me if you're respon
 time-off"). Name who overrides you ("Company-wide expectations override the list above"). End on
 mechanics that remove the last excuse.
 
+**Feedback to a person**: written feedback to one named report, who will read every line
+looking for what you think of them. The highest-stakes shape here, and the one where a draft
+that reads fine on the page can still detonate.
+
+Skeleton: `tl;dr` → why you wrote it → what happened → the directives → a section per
+objection → what you're *not* asking for → what you'd like from them.
+
+- **Assert only what you observed.** Every claim about the reader, or about a third party's
+  view of them, needs something you can point at. Never assert what they knew, intended, or
+  felt. "You knew `update_columns` skipped more than the one callback" was an inference from a
+  remark made days later in a different argument, and it had to be deleted rather than
+  repaired. Cut inflating adverbs too: "she raised it unprompted" argues the complaint was
+  spontaneous, which is a claim, not a fact. Hedge where the evidence is thin ("what she fills
+  it with **can be** worse than the truth"). If you want to claim a pattern, own the
+  observation yourself rather than attributing recurrence to someone else.
+- **Anything you fence off as out of scope stays out.** Parking a question ("that's a
+  technical question, we should talk about it separately") and then issuing a directive about
+  it later reads as bad faith.
+- **Bound the ask.** State the ceiling as well as the floor: what is enough, what is
+  explicitly not required, the escape hatch. "Answer it before you merge" became "before you
+  merge, or immediately after"; five minutes was clarified as enough to think and reply, "not
+  to architect the whole solution"; and "It's fine to not merge immediately and push back on a
+  larger change" was added outright. Unbounded directives read as bigger demands than intended.
+  If a rule appears in both the tl;dr and the body, loosen it in both places.
+- **Every directive needs a human line under it.** A run of bare imperatives reads as a
+  charge sheet. After each bolded directive add one plain line that does one of three things:
+  credit what they already do ("You already do this well, so it's a matter of consistency"),
+  state your own cost as a concrete scene rather than an abstraction ("I have to go into a 1:1
+  with Julie and essentially protect you"), or give the history and the latitude. Credit
+  motive and competence, not just effort ("I know you care about quality").
+- **Concede what you got wrong, before they raise it.** If the record contradicts something
+  you said, put it in the doc under their objection in their own words. It costs a paragraph
+  and it buys the rest of the document.
+- **Watch the comparisons.** Naming colleagues who handle it better is the fastest way to
+  turn feedback into a grievance. Keep the behavior, drop the names.
+
+See also anti-pattern #10b, and the passive-voice carve-out under Voice and Tone.
+
 **Hard-won lessons list**: the "falsehoods programmers believe" genre.
 Each heading is the wrong belief, quoted. Each body is the correction, with named vendors, dates,
 and receipts. One aphorism per section, then the specifics: "Documentation is a map, not the
@@ -403,6 +620,24 @@ question, never with a broken sentence or an empty heading.
 - Prose carries reasoning; bullets carry anything enumerable. A paragraph longer than three lines
   is rare.
 
+### Monthly Eng Update Items (Alex's section format)
+
+The monthly engineering update section has its own item format, used by Alex exclusively
+(other managers format their sections differently):
+
+- Bold title in sentence case, **no period at the end**, carrying a claim ("Cash App Direct
+  is live", "Galileo gave us a rough month").
+- A soft line break (Shift+Enter, same block) between the title and the body, so there's no
+  paragraph gap inside an item. The paragraph gap sits between items.
+- Titles state capability or status modestly: "A Paynetics skeleton is working," not
+  "Paynetics went from kickoff to a real card in three days." No speed brags, no drama.
+- First-name shout-outs are welcome for milestones ("This was also Sarah Laine's first
+  project, great work!").
+- The audience is engineers on other teams. Link the artifacts they would open to check for
+  overlap with their own work: PRs touching shared code, tech briefs, postmortems, decision
+  threads. Never link legal or commercial artifacts (MSAs, SOWs, contracts): state the fact,
+  skip the link.
+
 ### Lint
 
 After writing or editing a document, run the lint script on the output. If it fails, fix the
@@ -423,8 +658,10 @@ echo "proposed text" | lint-prose
 **Curly quotes are auto-fixed, not flagged.** Alex types straight quotes (`'` and `"`), so curly
 ones (`'`, `'`, `"`, `"`) are a tell that the text came from somewhere else. The substitution is
 mechanical and lossless, so the script just does it: in file mode it rewrites the file in place
-(only when something changed), in pipe mode it returns the corrected text on stdout. Em dashes and
-banned phrases still fail with exit 1, because those need a real rewrite rather than a substitution.
+(only when something changed), in pipe mode it returns the corrected text on stdout. Em dashes,
+banned phrases, and the AI-tell regexes (verdict sentences, staged reveals, puffery vocabulary,
+participle tails, and the rest of the five-move catalog) still fail with exit 1, because those
+need deletion or a real rewrite rather than a substitution.
 
 Diagnostics (`FIXED:`, `FAIL:`, `PASS:`) all go to stderr so stdout stays clean for piping.
 
@@ -573,6 +810,12 @@ text, then flags violations. This catches issues the writing agent rationalizes 
    > text, name the specific rule it breaks, and suggest a concrete fix. If no violations
    > are found, say "PASS."
    >
+   > Pay special attention to the five moves in "Ban the Essayist Register." Flag any
+   > sentence making one of those moves even when its wording matches no listed phrase;
+   > the move is the violation, not the phrase. For those findings, the suggested fix
+   > must be a deletion or the underlying fact stated plainly, never a reworded version
+   > of the same move.
+   >
    > CRITICAL: If you spot a potential violation, REPORT IT. Do not withdraw findings.
    > Do not rationalize why a violation is "actually fine" or "borderline acceptable."
    > You are a linter, not a defense attorney. False positives are cheap; missed
@@ -587,6 +830,23 @@ text, then flags violations. This catches issues the writing agent rationalizes 
    > </text-to-review>
 
 2. If the subagent flags violations, fix them before presenting the result to the user.
+   Fix flagged rhetoric by deleting the sentence or replacing it with the underlying fact,
+   never by rewording the same move. A correct fix pass makes the text shorter; if the
+   word count didn't drop, the move survived in new clothes.
 3. If the subagent says "PASS," proceed.
 
 Do not skip this step. The review is mandatory.
+
+**Rewriting a draft that arrived from outside this skill** (another model, another session,
+a draft written before the skill loaded): don't edit it sentence by sentence. Extract the
+facts into a skeleton (one plain fragment per fact), drop everything that fails the
+sentence test in "Ban the Essayist Register," and write fresh from the skeleton. Editing
+in place preserves the draft's structure, and the structure is where the performing
+register lives; this is why review-and-rewrite passes on essayist drafts decay instead
+of improving.
+
+The review covers only the text the subagent saw. Wording added afterward (a fix for a
+finding, a user-requested vocabulary swap, a new sentence) has not been reviewed: check it
+against this guide before presenting, and re-run the subagent when the change is more than a
+line or two. "Her feedback tells rather than asks" landed in a final report exactly this way
+on 2026-08-24 — it was written after the review pass, so no reviewer ever saw it.

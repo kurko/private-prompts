@@ -93,6 +93,51 @@ for phrase in "${banned_phrases[@]}"; do
   fi
 done
 
+# AI-tell patterns (regex). Sources: Wikipedia "Signs of AI writing" and the
+# 38 patterns in Simon Willison's llm-cliche-highlighter. Each entry is
+# "label|extended-regex". Only low-false-positive patterns belong here; the
+# judgment-call patterns live in the SKILL.md anti-pattern list instead.
+banned_patterns=(
+  "verdict sentence|(that|this|it)('s| is| was) not nothing"
+  "verdict sentence|('s| is| was) the (whole|entire) (point|game|thing|story|trick|pitch|idea|job)"
+  "verdict sentence|(that|this)('s| is| was) why .{0,60}(matters|mattered|counts|counted)\b"
+  "verdict sentence|('s| is| was) the part that"
+  "staged reveal|the punchline"
+  "staged reveal|here('s| is) the (twist|thing|catch|kicker|rub)"
+  "staged reveal|^turns out|[.!?] turns out|it turns out that"
+  "therapist voice|worth naming"
+  "therapist voice|sit with (that|this|it)\b"
+  "announced sincerity|let('s| us) be (honest|real|blunt|clear)"
+  "announced sincerity|i('ll| will) be honest"
+  "announced sincerity|you already know"
+  "announced sincerity|take my word for it"
+  "negative parallelism|not (just|only|merely|simply) [^.,;]{1,60},? but( also)?\b"
+  "negative parallelism|it('s| is) not [^,.;]{1,60}, it('s| is)"
+  "cadence chain|\bno [a-z-]+, no [a-z-]+"
+  "puffery|(stands?|stood|serves?|served) as a (testament|reminder)"
+  "puffery|a testament to"
+  "puffery|plays? a (crucial|pivotal|vital|key|central|critical|important) role"
+  "puffery|(ever-)?(evolving|changing|shifting) landscape"
+  "puffery|in today's (fast-paced|digital|modern|competitive|ever-)"
+  "AI vocabulary|\b(delve|delves|delving|tapestry|multifaceted|pivotal|bustling|meticulous(ly)?|boasts?)\b"
+  "AI vocabulary|\bunderscor(es|ed|ing) (the|its|his|her|their|our|how|that|a|an)\b"
+  "didactic filler|it('s| is) (also )?(important|worth|crucial|essential|vital) to (note|remember|understand|mention)"
+  "didactic filler|it('s| is) worth (noting|mentioning)|it should be noted"
+  "participle tail|, (highlighting|underscoring|emphasizing|showcasing|reflecting|demonstrating|illustrating|signaling|solidifying|cementing|reinforcing|underlining) "
+  "vague attribution|(experts|critics|observers|analysts) (argue|agree|note|suggest|believe|contend)"
+  "boilerplate outlook|despite these challenges|challenges remain\b|remains to be seen|time will tell"
+  "summary closer|in conclusion|in summary|to summarize"
+)
+
+for entry in "${banned_patterns[@]}"; do
+  label="${entry%%|*}"
+  regex="${entry#*|}"
+  if echo "$input" | grep -Ein "$regex" >&2; then
+    echo "FAIL: AI-tell pattern ($label). Delete the sentence or state the underlying fact plainly. Rewording is not a fix." >&2
+    fail=1
+  fi
+done
+
 # In pipe mode, hand the corrected text back on stdout.
 if [ -z "$file" ]; then
   printf '%s\n' "$fixed"
