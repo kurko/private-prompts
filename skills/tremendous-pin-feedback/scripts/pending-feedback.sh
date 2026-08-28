@@ -10,7 +10,19 @@
 set -euo pipefail
 export LC_ALL=en_US.UTF-8
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks before locating the repo. The skill is symlinked into
+# ~/.claude/skills, and deriving the path from an unresolved BASH_SOURCE makes
+# the ledger location depend on which path invoked the script: through the
+# symlink it lands on ~/.claude/tmp, through the real path on the repo's tmp/.
+# A split ledger reports "no ledger yet" while unposted submissions sit in the
+# other one - a false all-clear on lost feedback.
+SOURCE="${BASH_SOURCE[0]}"
+while [[ -L "$SOURCE" ]]; do
+  LINK_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ "$SOURCE" != /* ]] && SOURCE="$LINK_DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 DEFAULT_LEDGER="$(cd "$SCRIPT_DIR/../../.." && pwd)/tmp/submissions.jsonl"
 LEDGER_FILE="${1:-$DEFAULT_LEDGER}"
 
