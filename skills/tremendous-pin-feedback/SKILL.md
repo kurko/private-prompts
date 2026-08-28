@@ -1,12 +1,13 @@
 ---
 name: tremendous-pin-feedback
-description: Record feedback or praise for team members to Google Sheets for perf reviews. Use when the user wants to pin feedback, record praise, note someone's contribution, or save a highlight about a team member.
+description: Record feedback or praise for team members to Google Sheets for perf reviews, and record self evidence about Alex Oliveira's own work. Use when the user wants to pin feedback, record praise, note someone's contribution, save a highlight about a team member, or save a link plus their own commentary as evidence for their own review.
 argument-hint: "[slack-or-asana-url]"
 ---
 
 # Pin Team Member Feedback
 
-Record feedback highlights for team members to use in performance reviews.
+Record feedback highlights for team members to use in performance reviews, and
+self evidence about Alex Oliveira's own work (see Self Pins below).
 
 ## CRITICAL: Read-Only Slack Access
 
@@ -24,8 +25,94 @@ The only write operation this skill performs is posting to the Google Sheet.
 4. **Follow linked URLs** found in the content to gather deeper context (see Deep Link Traversal below)
 5. **Identify the target person** — who is this feedback *for*? (see Target Person below). Do this BEFORE resolving the name.
 6. **Resolve the target's full name** (see Member Name Resolution below)
-7. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
-8. **Post to the sheet** using the script
+7. **Branch on the target.** If the target is **Alex Oliveira**, stop here and follow
+   [Self Pins](#self-pins-evidence-about-alex-oliveira) instead of steps 8-9 below. Everything
+   after this line, including the career ladder step, applies to **team pins only**.
+8. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
+9. **Post to the sheet** using the script
+
+## Self Pins (evidence about Alex Oliveira)
+
+Alex is an engineering manager. He keeps an input file for every engineer he reviews and none
+for himself, so his own evidence has to be captured as it happens or it is gone by review time.
+This branch exists so he can throw a URL plus a line of his own commentary at the skill and have
+it land in the sheet without being turned into review prose.
+
+### When this branch applies
+
+The target resolves to **Alex Oliveira**. That is the whole trigger. It happens when:
+
+- The user says the pin is for himself ("pin this for me", "save this one for my review", "this is mine").
+- Or the Target Person rules resolve the author to Alex Oliveira and the user names no one else.
+
+If the target is anyone else, this section does not apply. Do not "borrow" the self format for
+a team pin because it looks shorter.
+
+### Capture, do not compose
+
+**This is the point of the whole branch.** Alex's commentary is evidence. Rewriting it destroys
+what makes it useful later: what he thought mattered, at the time, in his words. Formatting
+happens at review time, not at capture time.
+
+- Store his commentary **verbatim**. No polishing, no expanding, no fixing grammar, no
+  translating a fragment into a sentence.
+- Your only composed output is a **single headline** of at most one sentence, naming the project
+  or context so the row is findable months later. Nothing more.
+- **Never invent impact he did not claim.** If his words say "shipped it", the headline says
+  shipped it. It does not say "drove alignment across three teams".
+- If he gave **no commentary at all**, stop and ask him what he wants recorded. Do not write the
+  note for him and do not post a bare link.
+
+### What is different from a team pin
+
+| | Team pin | Self pin |
+|---|---|---|
+| Length | 2-3 paragraphs | One headline plus his verbatim words |
+| Career ladder | Read `career-ladder.md`, frame against the four competencies | **Skipped entirely.** Do not read it, do not reference it |
+| Tag | `[Positive; P5]`, `[Constructive; P4]` | `[Self]`, with **no** `P3`-`P6` level |
+| Voice | Second person ("You"), written to the engineer | First person, written for himself |
+| Focus | Observed / Impact / Ask, against ladder competencies | **Impact.** What changed because he did this |
+| Script | `post-feedback.sh` | `post-self-note.sh` |
+
+The ladder is an **engineering** ladder. Alex is in management, so mapping his work onto P-levels
+produces a wrong reading of his own evidence. Skip the career ladder step for self pins.
+
+### Still do the context gathering
+
+The reading half of the workflow is unchanged: fetch the URL, follow linked URLs via subagents,
+note substantive interactions from others. That context is what makes the headline specific
+("Cut vendor onboarding from three weeks to four days" instead of "vendor work"). It just does
+not turn into paragraphs of prose.
+
+### Posting a self pin
+
+```bash
+~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-self-note.sh \
+  "<headline>" \
+  "<Alex's commentary, verbatim>" \
+  "<url>"
+```
+
+The script fixes the member name, adds the `[Self]` tag, stores the commentary under a
+`My words:` marker, and refuses the note if it carries a ladder tag or if the commentary is
+empty. If it refuses, **stop and ask** — do not work around the refusal by reshaping the note.
+
+### Example
+
+```bash
+~/.private-prompts/skills/tremendous-pin-feedback/scripts/post-self-note.sh \
+  "Vendor onboarding runbook: new vendor live in 4 days instead of 3 weeks" \
+  "the runbook is the thing that made this fast, nobody had to ask me anything. reuse it for the next vendor" \
+  "https://tremendous-rewards.slack.com/archives/C01234/p1234567890"
+```
+
+Lands in the sheet as:
+
+```
+[Self] Vendor onboarding runbook: new vendor live in 4 days instead of 3 weeks
+
+My words: the runbook is the thing that made this fast, nobody had to ask me anything. reuse it for the next vendor
+```
 
 ## Fetching Slack Content
 
@@ -141,6 +228,9 @@ Specific figures ("around 1,900 lines across 41 files") and credit for the split
 
 ## Career Ladder Context
 
+**Team pins only. Skip this whole section for self pins** — the ladder is an engineering
+ladder and Alex is in management. Do not read `career-ladder.md` for a self pin.
+
 Before writing feedback, spawn an Explore subagent to read the career ladder at:
 `~/.private-prompts/skills/tremendous-pin-feedback/career-ladder.md`
 
@@ -153,6 +243,8 @@ This document describes the four competencies we value at Tremendous:
 Use these competencies to frame the feedback. When praising or giving constructive feedback, connect the observed behavior to these competencies where relevant.
 
 ## Feedback text format
+
+**Team pins only.** Self pins use the shorter shape in Self Pins above.
 
 Summarize this linked content conversation focusing on praising (positive) or
 providing feedback (negative) on the person's work on it, one or two paragraphs.
@@ -195,6 +287,9 @@ The script requires these environment variables to be set in the shell:
 
 ## Posting
 
+**Self pins use `post-self-note.sh` instead — see Self Pins above.** The script below is for
+team pins.
+
 Use the included script (same directory as skill):
 
 ```bash
@@ -220,6 +315,8 @@ When a PM or a teammate writes a message praising someone else, these diverge: t
 
 ### The rule
 
+0. **If the target is Alex Oliveira, this is a self pin.** Jump to Self Pins above and stop
+   applying the rest of this workflow.
 1. **Default to the message author.** The target is whoever wrote the source content, full stop. This is the default even when the body is mostly *about* someone else.
 2. **Override only when the description explicitly names a different person.** If the user's input says something like "pin this for Ivy" or "save as praise for the engineer", target that named person instead.
 3. **When author and subject differ and the description is silent → the author wins.** Do NOT infer the target from who the text is about, how many times a name appears, or who the praise is written toward. A name being mentioned — even prominently — is not a request to target that name.
@@ -246,6 +343,7 @@ Resolution rules:
    - **GitHub**: Use the commit author or PR author's full name.
 2. **If the source doesn't resolve a full name** (e.g., no URL provided, or the API only returns a first name), and you cannot determine the last name from context, append a flag: e.g., `"victor [last name unclear]"`. Never silently use a first name alone.
 3. **Final format**: lowercase the full name. Examples: `"victor antoniazzi"`, `"sarah johnson"`, `"vinicius barboza"`.
+   For self pins you never pass a name at all — `post-self-note.sh` fixes it to `alex oliveira`.
 4. **Never abbreviate, shorten, or use nicknames.** The sheet uses full names to identify people.
 
 ## Example
