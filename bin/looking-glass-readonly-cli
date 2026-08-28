@@ -11,11 +11,18 @@
 #   looking-glass-readonly-cli organizations 'filter[public_token]=SGGNMTLF7MUO'
 #   looking-glass-readonly-cli payouts 'filter[gift_id]=123' limit=50 sort=-created_at
 #   looking-glass-readonly-cli gifts 456789
+#   looking-glass-readonly-cli gift_product_sets 'filter[product_set_id]=807149' --count
 #
 # Options:
 #   --env <production|staging|sandbox>  Target environment (default: production)
+#   --all                               Follow cursor pagination; merge every page
+#   --count                             Follow pagination; print only the total count
+#   --max-pages <n>                     Cap pages for --all/--count (default 50)
 #   --raw                               Print compact JSON (no pretty-printing)
 #   -h, --help                          Show this help
+#
+# The server allows 300 requests per hour per user; --all/--count spend one
+# request per page (100 records each). An HTTP 429 means the budget is spent.
 #
 # Auth is ambient: Tailscale ingress injects Tailscale-User-Login, which the
 # Rails app maps to an AdminUser with the looking_glass permission. This
@@ -24,7 +31,7 @@
 set -euo pipefail
 
 usage() {
-  sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//' >&2
+  sed -n '3,24p' "$0" | sed 's/^# \{0,1\}//' >&2
 }
 
 err() {
@@ -54,6 +61,9 @@ pretty_print() {
 
 ENV="production"
 RAW="false"
+ALL="false"
+COUNT="false"
+MAX_PAGES=50
 POSITIONAL=()
 QUERY_PARAMS=()
 
@@ -63,6 +73,20 @@ while [[ $# -gt 0 ]]; do
       [[ $# -ge 2 ]] || err "--env requires a value"
       ENV="$2"
       shift 2
+      ;;
+    --max-pages)
+      [[ $# -ge 2 ]] || err "--max-pages requires a value"
+      [[ "$2" =~ ^[1-9][0-9]*$ ]] || err "--max-pages must be a positive integer"
+      MAX_PAGES="$2"
+      shift 2
+      ;;
+    --all)
+      ALL="true"
+      shift
+      ;;
+    --count)
+      COUNT="true"
+      shift
       ;;
     --raw)
       RAW="true"
@@ -94,9 +118,89 @@ if [[ ${#POSITIONAL[@]} -eq 2 ]]; then
   PATH_PART="${PATH_PART}/${POSITIONAL[1]}"
 fi
 
-CURL_ARGS=(--silent --show-error --fail-with-body --max-time 30 --get)
-for param in ${QUERY_PARAMS[@]+"${QUERY_PARAMS[@]}"}; do
-  CURL_ARGS+=(--data-urlencode "$param")
+PAGINATE="false"
+if [[ "$ALL" == "true" || "$COUNT" == "true" ]]; then
+  PAGINATE="true"
+  [[ ${#POSITIONAL[@]} -eq 1 ]] || err "--all/--count apply to list queries, not a single record"
+  [[ "$PATH_PART" != "schema" ]] || err "--all/--count do not apply to schema"
+fi
+
+# Issue one GET. $1 is the cursor to resume from, or empty for the first page.
+fetch_page() {
+  local after="$1"
+  local args=(--silent --show-error --fail-with-body --max-time 30 --get)
+
+  for param in ${QUERY_PARAMS[@]+"${QUERY_PARAMS[@]}"}; do
+    args+=(--data-urlencode "$param")
+  done
+  if [[ -n "$after" ]]; then
+    args+=(--data-urlencode "after=$after")
+  fi
+
+  curl "${args[@]}" "$(base_url "$ENV")/${PATH_PART}"
+}
+
+next_cursor() {
+  python3 -c 'import json,sys; print(json.load(sys.stdin).get("meta",{}).get("next_cursor") or "")'
+}
+
+if [[ "$PAGINATE" == "false" ]]; then
+  fetch_page "" | pretty_print
+  exit 0
+fi
+
+# The API caps a page at 100 records, so ask for full pages unless the caller
+# pinned their own limit.
+if ! printf '%s\n' ${QUERY_PARAMS[@]+"${QUERY_PARAMS[@]}"} | grep -q '^limit='; then
+  QUERY_PARAMS+=("limit=100")
+fi
+
+PAGES_FILE="$(mktemp)"
+trap 'rm -f "$PAGES_FILE"' EXIT
+
+cursor=""
+pages=0
+truncated="false"
+
+while :; do
+  body="$(fetch_page "$cursor")"
+  printf '%s\n' "$body" >> "$PAGES_FILE"
+  pages=$((pages + 1))
+
+  cursor="$(printf '%s' "$body" | next_cursor)"
+  [[ -n "$cursor" ]] || break
+
+  if [[ "$pages" -ge "$MAX_PAGES" ]]; then
+    echo "warning: stopped at --max-pages=${MAX_PAGES}; results are truncated" >&2
+    truncated="true"
+    break
+  fi
 done
 
-curl "${CURL_ARGS[@]}" "$(base_url "$ENV")/${PATH_PART}" | pretty_print
+python3 - "$PAGES_FILE" "$pages" "$truncated" "$COUNT" <<'PY' | pretty_print
+import json, sys
+
+path, pages, truncated, count_only = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+
+records, meta = [], {}
+with open(path) as handle:
+    for line in handle:
+        line = line.strip()
+        if not line:
+            continue
+        page = json.loads(line)
+        records.extend(page.get("data", []))
+        meta = page.get("meta", {})
+
+summary = {
+    "resource_type": meta.get("resource_type"),
+    "count": len(records),
+    "pages": pages,
+    "truncated": truncated == "true",
+}
+
+if count_only == "true":
+    print(json.dumps(summary))
+else:
+    print(json.dumps({"data": records, "meta": summary}))
+PY
