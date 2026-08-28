@@ -32,7 +32,7 @@ Update these values when team composition or Asana structure changes.
 | Julie Miller | US | `1207919732271562` | |
 | Filipe Costa | Brazil | `1204163251557610` | |
 | Sarah Laine | US | `1215477244324838` | New hire, started 2026-06-08. First included: June 2026 run |
-| Dionne Stanfield | TBD (confirm country) | `1216099555672581` | New hire, started ~2026-07-01. **First included: July 2026 run** (nothing to report for June) |
+| Dionne Stanfield | US | `1216099555672581` | New hire; start date unconfirmed (earliest Asana/GitHub activity 2026-07-17; July run assumed ~Jul 13 pending Alex's confirmation). First included: July 2026 run |
 
 **Asana IDs:**
 
