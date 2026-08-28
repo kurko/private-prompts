@@ -117,8 +117,33 @@ mid-word, and headings with nothing under them. Those are artifacts of shipping 
 pressure, not style. Ship a `TBD` marker or an open question stated as a question, never a
 broken sentence or an empty heading.
 
-**Never write a conclusion.** Every doc ends in something actionable or something unresolved:
-tips, a screenshot of the menu, next steps, open questions, an appendix of raw notes.
+**Default to no conclusion.** Roughly 95% of these docs end in something actionable or
+something unresolved: tips, a screenshot of the menu, next steps, open questions, an appendix
+of raw notes. This is a business environment, not an essay — a paragraph that restates what
+the reader just read earns nothing.
+
+But this is a default, not a prohibition. If there is strong evidence a conclusion serves the
+reader — a long doc whose argument needs landing, a decision that has to be stated plainly in
+one place, a synthesis the reader cannot assemble themselves — write it. Do not contort a doc
+to avoid one. The test is whether the ending does work the body did not already do.
+
+**Open questions belong only in a doc that stays private.** An `Open Questions` section is
+Alex thinking out loud, and it reads that way to anyone else: an unfinished doc, or a decision
+still up for grabs when it is not. So gate it on audience, not on shape.
+
+- Writing a doc Alex will share, publish, or hand to a team? No open-questions section. If the
+  doc is genuinely blocked on a decision, name the decision inline where it bites, as a `TBD`
+  or a one-line callout, and keep it to what the *reader* needs.
+- Questions *for Alex* — "should this be a checklist or an onboarding doc?", "do you want a
+  shared template?" — are not doc content at all. They are review questions. Put them in the
+  workspace doc (`notes/ai-tasks/`) or in the chat reply, where he answers them once and they
+  disappear. Never ship them inside the artifact.
+- Writing in a private space he alone reads, and the questions are for him? Then keep the
+  section.
+
+Note that "it lives in the private Documents database" does not by itself make a doc private.
+Almost everything starts there. Ask what happens to the doc next: if the answer is that it
+moves out or gets shared, write it as the shared doc.
 
 **Register is light and dry, never jokey or corporate.** Emoji in the page icon and sometimes
 prefixing H2s. "Yeah, that might not be true." "Those pesky Net::ReadTimeout." "Trivia:".
