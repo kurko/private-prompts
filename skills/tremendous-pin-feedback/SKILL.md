@@ -28,7 +28,7 @@ The only write operation this skill performs is posting to the Google Sheet.
 7. **Branch on the target.** If the target is **Alex Oliveira**, stop here and follow
    [Self Pins](#self-pins-evidence-about-alex-oliveira) instead of steps 8-9 below. Everything
    after this line, including the career ladder step, applies to **team pins only**.
-8. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback
+8. **Generate feedback text** - 1-2 paragraphs of specific praise or constructive feedback. The direction (positive vs constructive) follows Alex's input — see Feedback direction below.
 9. **Post to the sheet** using the script
 
 ## Self Pins (evidence about Alex Oliveira)
@@ -71,7 +71,7 @@ happens at review time, not at capture time.
 | Career ladder | Read `career-ladder.md`, frame against the four competencies | **Skipped entirely.** Do not read it, do not reference it |
 | Tag | `[Positive; P5]`, `[Constructive; P4]` | `[Self]`, with **no** `P3`-`P6` level |
 | Voice | Second person ("You"), written to the engineer | First person, written for himself |
-| Focus | Observed / Impact / Ask, against ladder competencies | **Impact.** What changed because he did this |
+| Focus | Observed / Impact (Ask on constructive pins only), against ladder competencies | **Impact.** What changed because he did this |
 | Script | `post-feedback.sh` | `post-self-note.sh` |
 
 The ladder is an **engineering** ladder. Alex is in management, so mapping his work onto P-levels
@@ -252,6 +252,28 @@ providing feedback (negative) on the person's work on it, one or two paragraphs.
 Why are we doing this? This snippet will be used to write their cycle review
 later in the year.
 
+### Feedback direction (critical)
+
+The pin's direction (positive vs constructive) comes from **Alex's input**, not from your own
+read of the source.
+
+- A praise pin contains praise only. Do not append improvement notes, "For next time:" advice,
+  or an Ask paragraph that Alex did not give.
+- Constructive feedback goes in only when Alex's input asks for it.
+- Why this is strict: at review time these rows are exported and fed to an AI, often without
+  Alex re-reading each one. An unmarked improvement note inside a praise row becomes feedback
+  Alex never gave and may not agree with.
+- If Alex's input carries both praise and a constructive point, post the constructive point as
+  its own `[Constructive; Pn]` pin instead of a tail on the praise row. Each row then reads
+  unambiguously at review time.
+- Escape hatch: if you believe an opposite-direction observation is genuinely worth recording
+  anyway, you may keep it ONLY by prefixing that sentence with the literal marker
+  `[NOT REQUESTED BY ALEX; OPTIONAL/MINOR]`. The review-time pass filters on this exact
+  string — do not vary it.
+- `post-feedback.sh` rejects positive pins that contain improvement-style phrasing without the
+  marker. If it refuses, do not reword the note to slip past the check. Remove the content,
+  split it into its own constructive pin (if Alex asked for it), or stop and ask Alex.
+
 ### Rules
 - Don't use the recipient's name, instead write it in the second person (You)
 - **Write from the first person perspective ("I").** These feedback snippets will be copied into perf review documents written by the user. Any reference to the user's own observations, praise, or context should use "I" (e.g., "I noticed your improvement in..." not "Alex noticed your improvement in..."). Never refer to the user by name in the third person.
@@ -270,13 +292,16 @@ The user will provide key focus areas:
 - [Person's name]: a hint only (often dictated via voice, may be first name only). You MUST always resolve the full name from the source — see Member Name Resolution below.
 - [What they did / context]:
     - If provided, make those areas more prominent
-    - If not provided and it's self evident, you can come up with your own feedback, positive or negative.
+    - If not provided and it's self evident, you can come up with the feedback content, but the
+      direction still follows Alex's input (see Feedback direction above). No stated direction
+      means it is a positive pin.
 
 Write 2-3 paragraphs that:
 - Observed: Are specific about what the person did
 - Impact: Explain the impact or why it matters
 - Start with a tag like `[Positive; P5]` or `[Constructive; P4]` where P4-P5 indicates priority/significance
-- Ask: How they could have done it differently.
+- Ask: How they could have done it differently. **Constructive pins only.** A positive pin gets
+  no Ask unless Alex asked for one, or it carries the marker from Feedback direction above.
 
 ## Required Environment Variables
 

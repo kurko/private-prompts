@@ -17,17 +17,34 @@ set -euo pipefail
 # Encoding::UndefinedConversionError.
 export LC_ALL=en_US.UTF-8
 
+NOTE="$1"
+MEMBER="$2"
+URL="$3"
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+
+# Direction gate: a [Positive] pin must not carry unrequested improvement
+# notes. Alex feeds these rows to an AI at review time without re-reading
+# each one; an unmarked "for next time" inside a praise row becomes feedback
+# he never gave. The marker below is the only accepted way to include one.
+MARKER="NOT REQUESTED BY ALEX"
+if grep -qi "^\[positive" <<<"$NOTE" && ! grep -qiF "$MARKER" <<<"$NOTE"; then
+  for phrase in "for next time" "next time," "room for improvement" "area for improvement" "one thing to improve" "one area to improve" "could have done"; do
+    if grep -qiF "$phrase" <<<"$NOTE"; then
+      echo "Error: positive pin contains improvement-style language (\"$phrase\") without the [NOT REQUESTED BY ALEX; OPTIONAL/MINOR] marker." >&2
+      echo "If Alex did not ask for this, remove that sentence and post again." >&2
+      echo "If Alex asked for it, post it as its own [Constructive; Pn] pin instead." >&2
+      echo "Do not reword the note to get past this check. When unsure, stop and ask Alex." >&2
+      exit 1
+    fi
+  done
+fi
+
 if [[ -z "${GSHEET_PUSH_APP_URL:-}" ]] || [[ -z "${GSHEET_PUSH_APP_SECRET:-}" ]]; then
   echo "Error: Required environment variables not set" >&2
   echo "  GSHEET_PUSH_APP_URL    - Google Apps Script web app URL" >&2
   echo "  GSHEET_PUSH_APP_SECRET - Secret key for authentication" >&2
   exit 1
 fi
-
-NOTE="$1"
-MEMBER="$2"
-URL="$3"
-TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
 
 # Post to Apps Script (curl handles redirect with -L)
 PAYLOAD=$(NOTE="$NOTE" MEMBER="$MEMBER" URL="$URL" TIMESTAMP="$TIMESTAMP" SECRET="$GSHEET_PUSH_APP_SECRET" ruby -r json -e '
