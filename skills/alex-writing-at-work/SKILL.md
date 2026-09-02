@@ -106,6 +106,18 @@ leaves it nowhere to land.
    - Boilerplate outlook: "Despite these challenges", "remains to be seen", "time will
      tell".
 
+**Mannered prose** is the same performing register at the phrase level, and Anthropic's
+own guidance for Claude Fable 5.1 defines it this way:
+
+Please remove all mannered prose. Mannered prose substitutes metaphor and flourish for
+direct statement. Instead of "a parameter worth varying," the mannered writer produces "a
+dial worth turning." Instead of "this point still matters," they write "this point earns
+its keep." The phrases exist to display the writer, not to convey the idea, and readers
+can tell. That is why mannered prose irritates: it makes the reader work harder so the
+writer can perform. It is also imprecise. Metaphors drag in connotations the writer did
+not choose and cannot control. The fix is to say what you mean. When a literal phrase is
+available, use it.
+
 Why models produce this: next-token prediction regresses to the mean, smoothing specific
 facts into generic significance (Wikipedia's example: the inventor of a train-coupling
 device becomes "a revolutionary titan of industry"), and feedback training rewards prose
@@ -118,7 +130,8 @@ lint proves nothing about paraphrases; the five moves are the rule.
 Sources, for re-deriving or extending this section: Wikipedia's sign catalog at
 https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing and the 38 detector patterns
 in https://tools.simonwillison.net/llm-cliche-highlighter (view source; the `patterns`
-array has names, descriptions, and regexes).
+array has names, descriptions, and regexes). The mannered-prose definition comes from
+https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1#writing-density.
 
 ### Voice and Tone
 
