@@ -1,3 +1,4 @@
+suppress_unstable_features_warning = true
 # Codex CLI configuration
 # Symlinked from ~/.private-prompts/codex-config.toml
 
@@ -7,16 +8,12 @@
 # Enable multi-agent so Codex can follow subagent instructions in skills
 # like code-review (experimental feature).
 multi_agent = true
-model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
+model = "gpt-6-astra"
+model_reasoning_effort = "xhigh"
 
 # MCP servers
 notify = ["/Users/alex/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
 personality = "pragmatic"
-
-[mcp_servers.pencil]
-command = "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64"
-args = ["--ws-port", "51426"]
 
 [mcp_servers.node_repl]
 args = []
@@ -29,13 +26,14 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_n
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/alex/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 CODEX_HOME = "/Users/alex/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
-NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
-NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
-NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
+BROWSER_USE_TINYSKY_ENABLED = "1"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = ""
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = ""
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.810.52044"
+BROWSER_USE_CODEX_APP_VERSION = "26.901.51231"
+NODE_REPL_TRUSTED_SERVICES = '{"browser":"/Users/alex/.codex/plugins/cache/openai-bundled/browser/26.901.51231/scripts/browser-service.mjs","sky":"@oai/sky/service"}'
 SKY_CUA_SERVICE_PATH = "/Users/alex/.codex/computer-use/Codex Computer Use.app"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
@@ -96,13 +94,17 @@ enabled = true
 [plugins."computer-history@openai-bundled"]
 enabled = true
 
+[plugins."codex-app-tools@openai-bundled"]
+enabled = true
+
+[plugins."unified-computer-use@openai-bundled"]
+enabled = true
+
 [marketplaces.openai-bundled]
-last_updated = "2026-08-23T21:01:42Z"
 source_type = "local"
 source = "/Users/alex/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
 [marketplaces.openai-primary-runtime]
-last_updated = "2026-08-27T09:05:20Z"
 source_type = "local"
 source = "/Users/alex/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
 
@@ -213,6 +215,30 @@ trust_level = "trusted"
 [projects."/Users/alex/Documents/Codex/2026-08-27/which-vendor-offers-steam-usd-gift"]
 trust_level = "trusted"
 
+[projects."/Users/alex/ai-notes"]
+trust_level = "trusted"
+
+[projects."/Users/alex/.codex/.chatgpt-projects/g-p-6a50516c1ec48191b8c514e11742efc8"]
+trust_level = "trusted"
+
+[projects."/Users/alex/www/cas-core"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Codex/2026-09-05/eu-x20"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Codex/2026-09-09/what"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Codex/2026-09-09/review-a-close-cousin-passed-away"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Codex/2026-09-09/if-x20"]
+trust_level = "trusted"
+
+[projects."/Users/alex/Documents/Codex/2026-09-09/realtime-voice-chat"]
+trust_level = "trusted"
+
 [hooks.state]
 
 [hooks.state."/Users/alex/work/tremendous/.codex/hooks.json:post_tool_use:0:0"]
@@ -236,12 +262,14 @@ trusted_hash = "sha256:80f2697dbe425a49300090f8ea7fbfdbce889ee03deff7df8f32d2b7b
 
 [tui.model_availability_nux]
 "gpt-5.6-sol" = 2
+gpt-6-astra = 2
 
 [shell_environment_policy.set]
-BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "9230e2bd8b24b7ac7a0ba6774c64bf0d78ecdabbdd91d0ed627b02a587bae2df"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/alex/.codex:/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
 
 [memories]
 generate_memories = true
 use_memories = true
+
+[features.context_management]
+experimental_mode = true
