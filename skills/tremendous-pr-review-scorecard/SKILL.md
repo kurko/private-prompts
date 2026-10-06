@@ -25,11 +25,25 @@ After fetching, sanity-check the Opening Script below against the doc's Format s
 
 ## Candidate PRs
 
-Each candidate gets their own repo: `tremendous-interviews/pr-review-interview--<first-last>`, and the exercise is PR #1 in that repo.
+Each candidate gets their own repo, and the exercise is PR #1 in that repo. The usual name is `tremendous-interviews/pr-review-interview--<first-last>`, but not always: some repos use the candidate's GitHub handle (`--okasten`), and a candidate who shares a name with an earlier one gets a different name.
 
 - Given a PR URL, parse repo and number from it.
-- Given only a name, find the repo: `gh repo list tremendous-interviews --limit 15 --json name,createdAt`
+- Given only a name, find the repo: `gh repo list tremendous-interviews --limit 15 --json name,createdAt`. Match on the creation date as well as the name, since the name may be a handle.
 - Do NOT confuse the candidate's PR with PR #1 in the shared `tremendous-interviews/pr-review-interview` repo. That one is the sample review whose comments flag every planted issue (linked from the doc).
+
+### Repo confirmation
+
+A wrong PR URL in the note ends up in the Ashby final report. That happened once: the candidate shared a name with an earlier one, the repo got a different name, and the report linked to the wrong PR. So the PR line carries a marker until the URL is checked:
+
+```
+PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1 [confirm repo name]
+```
+
+- **Write the marker** whenever the URL is not confirmed at write time. In prep this is the usual case, since Alex often creates the repo right before the call.
+- **Check whenever the marker is in the note.** Any time this skill reads the candidate's section (a prep re-run, scoring, a later edit), run `gh pr view 1 --repo tremendous-interviews/<repo> --json url,createdAt`.
+- **Confirmed** means the PR exists AND was created within a week of the interview date (the daily note's date). Existence alone is not enough: the repo of an earlier candidate with the same name exists too, but it is months old.
+- **On confirmation**, remove the marker. If the repo turned up under a different name, fix the URL in the same edit.
+- **If not confirmed**, list `gh repo list tremendous-interviews --limit 15 --json name,createdAt` and look for a `pr-review-interview--*` repo created in that window whose name matches the candidate or could be their handle. One clear match: fix the URL and remove the marker. Otherwise keep the marker and ask Alex for the repo name.
 
 ## Modes
 
@@ -40,7 +54,7 @@ Each candidate gets their own repo: `tremendous-interviews/pr-review-interview--
 ## Mode 2: Prep
 
 1. Fetch the Notion doc. Identify the candidate (from the message, today's daily note, or the newest `pr-review-interview--*` repo).
-2. Write the skeleton below into today's daily note (`journal/daily/YYYY-MM-DD.md`). If Alex already started a section for the interview, fill in around his content and never overwrite his lines (fixing an obvious typo in the header, like a misspelled name, is fine).
+2. Write the skeleton below into today's daily note (`journal/daily/YYYY-MM-DD.md`). If Alex already started a section for the interview, fill in around his content and never overwrite his lines (fixing an obvious typo in the header, like a misspelled name, is fine). Run the check from Repo confirmation first, and drop the `[confirm repo name]` marker from the PR line only if it passes.
 3. Output the opening script in chat so Alex can read it on the call.
 
 **Questions to include**, in this order: Alex's standing opener "In a long PR, how do you prioritize what you're going to focus on?" (from the bank below), then the doc's "ship fast vs. code quality" question (Alex's priority among the doc questions), then the rest of the doc's questions. Pull the exact wording and good-signal notes from the doc and reference the questions by topic here; never paste their text into this skill. The discussion slot is only 15 minutes, so the scaffold lays out all of them and Alex picks which to ask live.
@@ -68,7 +82,7 @@ Rubric: https://app.notion.com/p/tremendous/Interview-PR-review-bf2745b48d5e4101
 
 **tl;dr**
 
-PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1
+PR: https://github.com/tremendous-interviews/pr-review-interview--<candidate>/pull/1 [confirm repo name]
 
 ## Raw notes
 
@@ -137,6 +151,10 @@ Tiers: **B1** gives the strongest signal, **B2** are strong follow-ups, **B3** i
 
 ## Mode 3: Scoring
 
+### Step 0: Confirm the repo
+
+Run Repo confirmation before anything else; B and C below fetch from that repo. Do this even if the marker is gone, since the check is one call. If the repo can't be confirmed, stop and ask Alex. Scoring the wrong PR, such as one from an earlier candidate with the same name, is worse than waiting.
+
 ### Step 1: Fetch, in parallel
 
 **A. The Notion doc** (if not already fetched this session). The "PR issues scorecard" section is the answer key.
@@ -188,7 +206,7 @@ Rate: **Excellent** / **Good** / **Needs work** / **Concerning**.
 ### Step 4: Outputs
 
 Write A, B, and E into the candidate's section in the daily note (mind the live-editing caution above). Prep already laid out the headings, so fill them rather than appending new ones:
-- B (final report) fills the `## Final report` section, replacing the `**tl;dr**` placeholder. Leave the PR link that sits below it in place.
+- B (final report) fills the `## Final report` section, replacing the `**tl;dr**` placeholder. Leave the PR link that sits below it in place; after Step 0 it carries the confirmed URL and no marker.
 - A (scorecard) fills the `### PR Review Scorecard (AI)` section, which prep places below Post call notes so Alex can copy the report through Post call notes into Ashby without it.
 - E (transcript) fills the `### Meeting transcripts (Granola)` section at the end.
 Match an existing heading even if it is a close variant (a different heading level, or `### Meeting transcripts` without the suffix); only create a section if the note predates this scaffold and lacks it. If the live discussion hasn't happened yet, show A and B in chat instead and fill them once the call is done. C stays in chat only.
@@ -251,3 +269,18 @@ Weave discussion answers into the narrative and pros/cons. Good signs:
 - Mentions team dynamics, not just code correctness
 - Has opinions about process without being rigid
 - Asks the interviewer clarifying questions (they'd do the same on a real review)
+
+## Past verdicts (record)
+
+A record of Alex's past PR review verdicts, without names. Look at it only when Alex asks how a candidate compares to past ones (e.g. "is this more No or more Yes?"). It plays no part in scoring, the verdict, or the write-up, and the final report never cites it. Each verdict came from the whole session, and the live discussion often weighed more than the catch rate. Counts are against the 15-issue answer key.
+
+| Written catch rate | Highs | Verdict | What decided it |
+|---|---|---|---|
+| 8 of 15, plus 3 partials | 5 of 6 | Yes | Near-full High coverage, no false positives, directed AI deliberately, nuanced discussion across outage, deadline, and rollout scenarios |
+| 7 of 15, plus 1 partial | 4 of 6 | leaning Strong Yes | Labeled blockers vs nits unprompted, treated the PR as a people problem before a code problem |
+| 4 of 15, plus 3 partials | 3 of 6 | leaning Strong Yes | Modest written review, strong EM judgment and product sense in the discussion |
+| 4 of 15, plus more raised verbally | 2 of 6 | leaning Yes | Light written review, good tone and judgment in the discussion, no red flags |
+| 3 of 15, plus 2 partials | 3 of 6 | on the fence, leaning Yes | Polite, question-led comments; answers lacked substance; reviews the data model last by habit |
+| 2 of 15 | 2 of 6 | leaning No | Process-only review that missed the code problems, directive tone |
+
+After Alex settles a verdict, add a row without a name.

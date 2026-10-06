@@ -13,7 +13,7 @@ Run **Prep mode (Mode 2)** of the `tremendous-pr-review-scorecard` skill, end to
    - `$ARGUMENTS`, if given (a candidate name or a PR URL)
    - the candidate already named in today's daily note
    - the newest `tremendous-interviews/pr-review-interview--*` repo (`gh repo list tremendous-interviews --limit 15 --json name,createdAt`)
-3. **Verify the candidate's PR** exists (`pr-review-interview--<candidate>` PR #1) so the link written into the note is live.
+3. **Confirm the candidate's PR** with the skill's Repo confirmation check. If it doesn't pass yet (Alex often creates the repo right before the call), write the PR link with the `[confirm repo name]` marker; later runs of the skill re-check it.
 4. **Write the scaffold** into today's daily note (`journal/daily/YYYY-MM-DD.md`) using the skill's skeleton and `Q:`/`A:` format. The skeleton (authoritative in the skill) lays out every section up front, including the placeholders that get filled later, and orders the questions with Alex's prioritization opener and the doc's "ship fast vs. code quality" question first. Fill in around anything Alex already started; never overwrite his lines.
 5. **Output the opening script** in chat.
 
