@@ -84,6 +84,7 @@ banned_phrases=(
   "the gap:"
   "what matters"
   "not flashy"
+  "moving forward"
 )
 
 for phrase in "${banned_phrases[@]}"; do
@@ -119,7 +120,12 @@ banned_patterns=(
   "puffery|plays? a (crucial|pivotal|vital|key|central|critical|important) role"
   "puffery|(ever-)?(evolving|changing|shifting) landscape"
   "puffery|in today's (fast-paced|digital|modern|competitive|ever-)"
-  "AI vocabulary|\b(delve|delves|delving|tapestry|multifaceted|pivotal|bustling|meticulous(ly)?|boasts?)\b"
+  "AI vocabulary|\b(delve|delves|delving|tapestry|multifaceted|pivotal|bustling|meticulous(ly)?|boasts?|accreting|foster(s|ed|ing)?)\b"
+  "AI vocabulary|\b(leverage[ds]?|leveraging|utilize[ds]?|utilizing)\b"
+  "AI vocabulary|\b(now|also|still|that|which|they) carr(y|ies|ied)\b"
+  "AI vocabulary|\bensur(e[ds]?|ing)\b"
+  "performative enthusiasm|\b(excited|thrilled|pleased|proud|honored|humbled) to (share|announce|present|report|introduce)"
+  "sycophantic opener|\b(great|excellent|good|wonderful|fantastic) (question|point|observation|insight|catch)"
   "AI vocabulary|\bunderscor(es|ed|ing) (the|its|his|her|their|our|how|that|a|an)\b"
   "didactic filler|it('s| is) (also )?(important|worth|crucial|essential|vital) to (note|remember|understand|mention)"
   "didactic filler|it('s| is) worth (noting|mentioning)|it should be noted"

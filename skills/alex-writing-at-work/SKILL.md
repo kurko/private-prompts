@@ -220,6 +220,9 @@ things. Repetition of the right word is not a defect.
 - "serious" as a size intensifier in formal writing ("serious revenue," "serious volume"). Say
   "considerable," or state the actual number. (The adverb "seriously" for actions, e.g. "you
   stumbled seriously," stays.)
+- "carry" when you mean "has," "includes," or "shows" ("product SKUs now carry currency_code,"
+  "the response carries a token"). Say what you mean: "product SKUs now include currency_code,"
+  "the response has a token." AI overuses "carry" as a generic verb for containment.
 
 **Strong verbs Alex reaches for:** "catches," "flags," "triggers," "bubbles up," "masks,"
 "burns (money)," "spins up," "steps in," "doubles down," "shifts," "pokes (at)," "turns (that
@@ -374,8 +377,23 @@ Alex-specific rules and the hard cases that need more nuance than the family ban
     happened ("top-ups now run automatically through CurrencyCloud, and we tested them with a
     canary threshold") and let the reader weigh it. Any "harder/easier/slower than" framing
     needs evidence for both sides or it goes.
+20. **False agency (tool-as-hero).** Making a tool, artifact, or code object
+    the subject of a verb only a person performs: "tadmin can manage product
+    status," "the cutover task dry-runs by default," "the monitor fired,"
+    "invariants hold," "CatalogItemBuilder skips and reports." The tool does
+    not manage, dry-run, fire, hold, or skip; a person does those things
+    through the tool. Make the human the subject and demote the artifact to
+    the instrument: "we can manage product status in tadmin," "we dry-run
+    the cutover task," "we got alerted," "we rescue in CatalogItemBuilder."
+    LLMs produce this because training data is full of product-marketing
+    copy where the tool is the hero ("Slack connects teams," "Datadog
+    monitors your infrastructure"). In an engineering update the hero is the
+    team. Carve-out: vendor behavior is fine with the vendor as subject
+    ("Cash App declines the request," "InComm returned 5xx") because the
+    vendor genuinely acts on its own; the ban is on our own tools and
+    artifacts.
 
-To judge whether a sentence carries substance, useful smell tests: does it tell the reader
+To judge whether a sentence has substance, useful smell tests: does it tell the reader
 something they didn't know, is a concrete actor doing a concrete thing, would deleting it
 lose anything, does each list item carry a fact. These are illustrative, not gates: don't
 mechanically cut a sentence for failing one or keep it for passing all of them. The principle
