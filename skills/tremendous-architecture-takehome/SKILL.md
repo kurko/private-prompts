@@ -6,7 +6,7 @@ argument-hint: "[candidate-name-or-doc-link]"
 
 # Architecture Take-Home Interview: Prep, Gap Analysis & Scorecard
 
-This skill is a wrapper around the team's Notion doc for the "Onsite: Back-end brief presentation" interview. The doc owns the interview content: format, the approach answer key, the discussion questions, and the evaluation criteria. This skill owns Alex's workflow: fetching that content, writing prep into the daily note, analyzing the candidate's brief for gaps, the Q:/A: format, and the write-up conventions. Never duplicate doc content into this skill; the sibling `tremendous-pr-review-scorecard` skill once hardcoded an answer key that drifted from its doc, and scoring drifted with it.
+This skill is a wrapper around the team's Notion doc for the "Onsite: Back-end brief presentation" interview. The doc owns the interview content: format, the approach answer key, the discussion questions, and the evaluation criteria. This skill owns Alex's workflow: fetching that content, writing prep into the daily note, analyzing the candidate's brief for gaps, the question order and format, and the write-up conventions. Never duplicate doc content into this skill; the sibling `tremendous-pr-review-scorecard` skill once hardcoded an answer key that drifted from its doc, and scoring drifted with it.
 
 ## The interview
 
@@ -44,19 +44,40 @@ Modes 2 and 3 often run back to back in one session: scaffold first, gap analysi
 1. Fetch the Notion doc. Identify the candidate (from the message, today's daily note, or Alex's calendar).
 2. Write the skeleton below into today's daily note (`journal/daily/YYYY-MM-DD.md`). If Alex already started a section for the interview, fill in around his content and never overwrite his lines (fixing an obvious typo in the header, like a misspelled name, is fine).
 
-**Questions**: pull the exact wording and the correct-answer notes from the doc's "Questions to ask" section, one Q:/A: pair per question, in the doc's order. Put the correct-answer note in italics on the Q line so Alex can check answers live without flipping to Notion. Reference questions by topic here; never paste their text into this skill.
+**Questions to include**, in this order. The 25-minute discussion fits about five core questions with follow-ups, so the strongest ones go first and Alex never has to reorder live. (On 2026-10-01 the scaffold followed the doc's order: the migration question sat fifth, behind four roles questions he skipped, and he reordered during the call.)
+
+Core:
+
+1. **Migration walk-through.** One end-to-end prompt: walk me through the migrations, where the code lives, how you'd run them in production, and how we avoid downtime. It merges the doc's data migration questions with its rollout question, so one answer shows the whole sequence and leaves room for follow-ups. Seed FQs from the doc's sub-questions the candidate may skip (e.g. records created while the backfill runs, which tests the order of operations).
+2. **Approach and default scopes.** Ask why they chose their scoping mechanism over the alternative, in the candidate's terms. The question works either way:
+   - **They rejected `acts_as_tenant` / `default_scope`:** "You rejected acts_as_tenant, why?" The answer confirms they know the downsides. Keep it short.
+   - **They chose it:** "Why acts_as_tenant over scoping explicitly in policies or queries?" Seed FQs from the doc's default-scope questions: first the downsides, then a steer away from it. The italic note on the steer FQ names the signal: do they take the feedback or defend the choice?
+   - **The brief doesn't mention it:** ask how they keep every query scoped to the org, and whether they considered a default scope.
+
+   When the brief lands on a dispreferred approach (multiple DBs, schemas, default scopes), move this question first: steering needs time to see whether the candidate takes the feedback.
+3. **Scale.** Frame the doc's big-tables question as scale: "what if we had 1MM users, what would you do differently?" The open framing lets the candidate bring up locking on their own.
+4. **Locks.** Ask directly about table locks during the migration and backfill on big tables, even when the scale answer was good. Always ask it: locking is the doc's correct answer for big tables, and the open scale question doesn't reliably bring it up (on 2026-10-01 the candidate answered scale with Sidekiq batches and never mentioned locks). Use the doc's answer-key points (batching, `strong_migrations`, adding a column with a default) as the italic note.
+5. **Notifications.** Use the doc's admin-panel question: starting a cycle from the admin panel sends emails and Slack notifications, so what do you watch out for? The signal is whether the candidate makes it async with Sidekiq on their own. Ask it in the candidate's terms when the brief moves cycle launch or notifications into the UI.
+
+If time: the remaining doc topics in the doc's order (roles, which models get the org, testing), under a plain `If time` line. Drop any topic the gap analysis marks as covered by the brief.
+
+Pull the correct-answer notes from the doc's "Questions to ask" section and put them in italics on the Q line, so Alex can check answers live without flipping to Notion. When the brief is in hand, word each question in the candidate's terms ("You rejected acts_as_tenant, why?") rather than the doc's generic text. Reference questions by topic here; never paste their text into this skill. If the doc's topics change, keep the principle (migration walk-through, then approach, then scale, then locks, then notifications) and tell Alex.
 
 **Approach cheat sheet**: condense the doc's answer key into a few bullets inside the scaffold (which approaches are bad signs and why, what good looks like, the steering guidance). This is fetched content written into the note instance, which is fine; only the skill file itself must stay content-free. It lives below the `***`, with the other AI/reference sections, so it never rides along when Alex copies his notes into Ashby.
 
-**Q:/A: format.** During the call Alex arrows down from the Q line and types straight after `A: `; bold or quoted questions make that slower:
+**Question format.** During the call Alex arrows down from the Q line and types straight after the `- `; bold or quoted questions make that slower:
 
 ```
 Q: (Topic) The question goes here? _(correct answer / good signal, from the doc)_
-A: 
+- 
+FQ: A likely follow-up? _(what it probes)_
+- 
 ```
 
 - Plain `Q: ` prefix, question on a single line, answer note in italics on the same line.
-- `A: ` left blank (trailing space), blank line between pairs.
+- The answer is a bullet list under the question: one empty `- ` (trailing space), blank line between pairs. Alex presses enter to add bullets and split the answer into parts, so a bare `A: ` line would fight him.
+- `FQ: ` marks a follow-up question, answered the same way. Alex adds his own during the call. Seed at most one or two per core question, so the list stays short enough to scan live.
+- Text in `[brackets]` inside an answer is Alex's own aside (e.g. "[how?]" for a probe he wanted to make), not the candidate's words.
 
 **Live-editing caution.** On interview days Alex types in the daily note while you edit it. If Edit fails with "file modified", re-read and retry with a small, stable anchor. If he is actively typing and the target spot is the end of the file, append with a `cat >> file <<'EOF'` heredoc instead; an append cannot clobber his text.
 
@@ -65,8 +86,8 @@ Skeleton (lay out every section up front, so each has a home before the call). T
 ```markdown
 # <Candidate Name> Architecture take-home interview
 
-Brief: https://app.notion.com/p/tremendous/Onsite-Back-end-brief-presentation-94f1d261073b4a06a4aec37742f1b2c7
-Doc: <candidate doc link, when known>
+Interview instructions: https://app.notion.com/p/tremendous/Onsite-Back-end-brief-presentation-94f1d261073b4a06a4aec37742f1b2c7
+Brief by candidate: <candidate doc link, when known>
 
 ## Final report
 
@@ -76,6 +97,10 @@ tl;dr
 
 ### Pre-call notes
 
+Pros
+- 
+
+Cons
 - 
 
 ### Call notes
@@ -83,13 +108,22 @@ tl;dr
 - 
 
 Q: ...
-A: 
+- 
+
+If time
+
+Q: ...
+- 
 
 Their questions
 - 
 
 ### Post call notes
 
+Went well
+- 
+
+Fell short
 - 
 
 ### Brief Gap Analysis (AI)
@@ -103,7 +137,11 @@ Their questions
 ### Meeting transcripts (Granola)
 ```
 
-`### Pre-call notes` is Alex's own initial read of the brief, jotted before the call. The doc asks interviewers to base part of their feedback on this pre-discussion impression, so it stays separate from the AI gap analysis and never gets filled by Claude.
+The header labels are explicit because "Brief" alone reads as the candidate's brief: `Interview instructions` is the team's Notion doc, `Brief by candidate` is theirs.
+
+`### Pre-call notes` is Alex's own initial read of the brief, jotted before the call (he writes it as Pros and Cons). The doc asks interviewers to base part of their feedback on this pre-discussion impression, so it stays separate from the AI gap analysis and never gets filled by Claude.
+
+`### Post call notes` has `Went well` and `Fell short` prompts so Alex covers both sides while the call is fresh. The final report's pros and cons draw from them.
 
 ## Mode 3: Gap Analysis
 
@@ -131,7 +169,7 @@ Red flags to steer on:
 - [anything matching the doc's bad-sign list, with where it appears in the brief]
 ```
 
-6. If the analysis changes question priority, do not reorder the Q:/A: pairs Alex may already be reading; the "Ask first" list carries the ordering.
+6. Apply the analysis to the questions only while Alex hasn't started typing in Call notes (e.g. when the scaffold and the gap analysis go out in the same pass): word the questions in the candidate's terms, swap an `If time` topic into the core set when the brief leaves it wide open, and move the approach question first on a red flag. Once he has started typing, leave the questions alone; the "Ask first" list carries the priority.
 
 Chat output: the same summary, short. Alex is usually reading the brief in parallel; the analysis is a second pair of eyes, not a replacement for his pre-read.
 
@@ -161,7 +199,7 @@ Prompt template:
 
 ### Step 2: Score (main agent)
 
-Use the gap analysis, Alex's notes (Pre-call notes, Call notes answers, Their questions, Post call notes), and the transcript when available. The discussion is most of the signal in this interview: the doc's questions have correct answers noted, so check the `A:` lines and transcript against them. A candidate who wrote a weak brief but corrected course when steered (took the feedback on a dispreferred approach) is showing exactly what the steering guidance tests for; say so. The reverse, defending a bad approach after a nudge, weighs heavily.
+Use the gap analysis, Alex's notes (Pre-call notes, Call notes answers, Their questions, Post call notes), and the transcript when available. The discussion is most of the signal in this interview: the doc's questions have correct answers noted, so check the answer bullets (under each `Q:` and `FQ:` line) and the transcript against them. A candidate who wrote a weak brief but corrected course when steered (took the feedback on a dispreferred approach) is showing exactly what the steering guidance tests for; say so. The reverse, defending a bad approach after a nudge, weighs heavily.
 
 **Weight the brief as a work sample, not just a warm-up for the discussion.** A strong live discussion does not fully rescue a thin brief. The brief is how the candidate communicates in writing, unsupervised, which is a direct predictor of on-the-job behavior. The panel has rejected on exactly this ("imagine seeing him post a brief like that and then having to coach him") even when the candidate clearly knew his stuff live. Score the discussion on its merits, but don't round the verdict up to a Strong Yes on the strength of the live chat when the artifact was under-prepared. When the two diverge, say so plainly and let the divergence carry weight.
 
