@@ -13,6 +13,12 @@ This command orchestrates multiple specialized sub-agents to create a landing pa
 - Email collection setup
 - Quality assurance testing
 
+## Arguments
+
+Arguments: $ARGUMENTS
+
+The arguments may carry a visual concept: a named real-world reference and how it shapes the page, for example "each section is a still from a 16-bit RPG". Record it as CONCEPT. The concept is the art direction for the whole run: brand palettes, design and logo work inside it, and no council replaces it. If the project has brand guidelines the user keeps, the concept applies within them (see Question 6). Anything else in the arguments is product context.
+
 ## Process
 
 **IMPORTANT**: You are the ORCHESTRATOR. Do minimal work yourself. Delegate everything to sub-agents. Your job is to:
@@ -135,14 +141,14 @@ Use `AskUserQuestion` to gather or confirm essential information. Skip questions
   - "Custom backend (I'll provide the endpoint)"
   - "Fake/placeholder for now"
 
-**Question 6: Design Direction**
-- "Any design preferences or inspiration?"
+**Question 6: Art Direction** (skip if CONCEPT is set, or if Step 0.1 found brand guidelines and the user kept those documents in Step 0.2)
+- "What should the page look like? Name a real-world reference and how it shapes the page, for example 'each section is a still from a 16-bit RPG'."
 - Options:
-  - "Modern minimalist"
-  - "Bold and colorful"
-  - "Corporate professional"
-  - "Playful and friendly"
-  - "Let the AI surprise me"
+  - "Seed it": derive the art direction from a random seed
+  - "Plain and restrained": neutral grays, one accent, system fonts, to settle structure and copy first
+- A free-text answer becomes CONCEPT.
+
+Record the result as ART_DIRECTION: the CONCEPT, the brand guidelines, "seeded", or "plain: neutral grays, one accent, system fonts". When both a CONCEPT and kept brand guidelines exist, the concept applies within the guidelines: the guidelines keep palette, type and logo, and the concept shapes composition, imagery and motion.
 
 ### Phase 1: Confirmation
 
@@ -164,17 +170,18 @@ Based on your inputs, here's what I'll do:
 
 ### Creative Phase (2 sub-agents)
 6. **Copywriter Council** (3 perspectives) - Create landing page copy
-7. **Design Innovator Agent** - Propose unique visual approaches
+7. **Design Innovator Agent** - Turn the art direction into a page design
 
 ### Implementation Phase (2 sub-agents)
 8. **Developer Agent** - Build the landing page
 9. **Logo Designer Agent** - Create SVG logo
 
-### Quality Phase (2 sub-agents)
-10. **QA Agent** - Test functionality, responsiveness, accessibility
-11. **Review Council** - Final quality check with multiple perspectives
+### Quality Phase (critique loop + 1 sub-agent)
+10. **Design Critique** - Screenshot-only critic, up to 3 rounds
+11. **QA Agent** - Test functionality, responsiveness, accessibility
 
-**Estimated sub-agents**: 11
+**Estimated sub-agents**: 11-15
+**Art direction**: [ART_DIRECTION]
 **Email service**: [selected option]
 **Tech stack**: [selected option]
 
@@ -251,13 +258,25 @@ You are a brand strategist and naming specialist.
 
 Context: [PRD SUMMARY]
 Market: [TARGET MARKET]
+Art direction: [ART_DIRECTION]
 
-Generate 7 CREATIVE name options. For each:
+Generate 7 CREATIVE name options. Derive each option's art direction and logo
+concept from the art direction above.
+
+If the art direction is "seeded", give each option its own seed. Generate
+each seed with a shell command such as `openssl rand -base64 48` instead of
+writing it yourself, so every run starts from a different string. Read
+patterns in the string (repeats, runs, digit groups, case changes) and turn
+them into palette, type, composition, imagery and motion decisions. Keep the
+string out of names, copy and visible text.
+
+For each option:
 - Name
 - Meaning/etymology
 - Tagline
 - Why it works
-- Color palette (with hex codes)
+- Art direction: palette (with hex codes), type, composition, imagery,
+  motion, and a real-world reference it evokes
 - Logo concept
 
 IMPORTANT:
@@ -276,6 +295,10 @@ You are leading a brand identity council with 3 distinct perspectives:
 3. **Cultural Expert**: Local resonance, pronunciation, cultural fit
 
 TOP CANDIDATES: [FROM PREVIOUS AGENT]
+ART DIRECTION: [ART_DIRECTION]
+
+If the art direction is a concept or brand guidelines, the final palette and
+logo direction must follow it; the council chooses within it, not around it.
 
 Process:
 1. Each perspective argues for their preference
@@ -286,12 +309,16 @@ Process:
 Output:
 - Final brand choice
 - Refined tagline (3 alternatives)
-- Final color palette
+- Final art direction: palette (with hex codes), type, composition, imagery,
+  motion, and a real-world reference
 - Logo direction
 - Brand voice guidelines
 
 IMPORTANT: This is role-play. Commit to each perspective fully.
 ```
+
+After the council, set ART_DIRECTION to the council's final art direction.
+Later prompts get this concrete direction, not the word "seeded" or "plain".
 
 ### Phase 4: Creative (Parallel)
 
@@ -324,21 +351,19 @@ IMPORTANT:
 
 #### Sub-agent 4.2: Design Innovator
 ```
-You are a design innovator tasked with proposing UNIQUE visual approaches.
+You are a design innovator turning the art direction into a page design.
 
 Brand: [BRAND NAME]
 Colors: [PALETTE]
 Mood: [FROM BRAND COUNCIL]
+Art direction: [ART_DIRECTION]
 
-Your job is NOT to follow trends. Propose:
-1. 3 distinct visual concepts (describe in detail)
-2. Unique interaction ideas
-3. Memorable micro-animations
-4. How to make this landing page stand out
+Work inside the art direction; don't replace it. Propose:
+1. 3 distinct executions of it (layout, imagery, interaction), described in detail
+2. Interaction ideas that fit the direction
+3. Micro-animations that fit the direction
 
-Think: What would make someone screenshot this and share it?
-
-Pick your favorite concept and provide detailed specs for implementation.
+Pick the execution that best fits the direction and provide detailed specs for implementation.
 ```
 
 ### Phase 5: Implementation
@@ -378,7 +403,7 @@ IMPORTANT:
 You are creating an SVG logo.
 
 Brand: [BRAND NAME]
-Concept: [FROM BRAND COUNCIL]
+Logo direction: [FROM BRAND COUNCIL]
 Colors: [PALETTE]
 
 Create:
@@ -392,7 +417,36 @@ Output: Complete SVG code for both versions
 
 ### Phase 6: Quality Assurance
 
-#### Sub-agent 6.1: QA Tester
+#### Step 6.1: Design Critique
+
+Run this step yourself, since it starts its own sub-agents. Critique the built
+page from screenshots in a fresh context and iterate.
+
+Before round 1, create a temporary folder outside the project (for example
+with `mktemp -d`), write the critic prompt and save it there. The prompt must
+not mention the product, the brief or the art direction. Use it unchanged
+every round, so scores stay comparable. The critic is a design
+critic at a top studio who opens only the listed screenshot files. It names
+the aesthetic the page is going for, describes how a top studio would execute
+it, lists the biggest gaps (structure and composition before details, each
+naming the element and the change), lists elements to remove, penalizes
+overdone or AI-generated patterns (decorative gradients, glows, generic
+three-card grids), and ends with a score out of 10.
+
+Each round:
+1. Screenshot the page at 1440px and 390px wide, full page, saved in the
+   temporary folder with neutral names such as `1440.png` and `390.png`.
+2. Start a fresh sub-agent on the strongest model available with the saved
+   prompt and the screenshot paths only: no code, no brief, no earlier
+   critiques, no target score.
+3. Stop if the score is 9 or higher, or after the third critique. Otherwise,
+   drop any gap or removal that conflicts with the art direction or a user
+   requirement (report it with the gaps left open), send the remaining fixes
+   and the art direction to a developer sub-agent, and start the next round.
+
+Report the last critique's score, and its gaps as the gaps left open.
+
+#### Sub-agent 6.2: QA Tester
 ```
 You are a QA engineer testing the landing page.
 
@@ -417,23 +471,6 @@ Report: List of issues found with severity (critical/major/minor)
 IMPORTANT: Use Bash to actually test things. Don't just describe.
 ```
 
-#### Sub-agent 6.2: Review Council
-```
-You are leading a final review council with 3 perspectives:
-
-1. **UX Expert**: Is it intuitive? Will users convert?
-2. **Brand Guardian**: Does it match the brand identity?
-3. **Performance Critic**: Is it fast, accessible, SEO-ready?
-
-Review the completed landing page and:
-1. Each perspective gives their assessment
-2. Identify any issues that MUST be fixed
-3. Suggest nice-to-have improvements
-4. Give overall quality score (1-10)
-
-Be honest. If something needs fixing, say so.
-```
-
 ### Phase 7: Finalization
 
 After all sub-agents complete:
@@ -441,6 +478,7 @@ After all sub-agents complete:
 1. **Fix any critical issues** from QA
 2. **Present final summary** to user:
    - Brand name and tagline
+   - Art direction, final critique score, and gaps left open
    - Tech stack used
    - Email service configured
    - Files created
@@ -481,16 +519,17 @@ User needs to: Create free account at formspree.io, get form ID
 
 ## Sub-agent Instructions Template
 
-Every sub-agent prompt should include:
+Every sub-agent prompt except the design critic's should include:
 
 ```
+Art direction: [ART_DIRECTION]
+
 IMPORTANT INSTRUCTIONS:
 1. Load and follow any CLAUDE.md instructions in the workspace
 2. Use available skills when appropriate (commit, code-review, etc.)
-3. Be CREATIVE - don't just follow safe patterns
-4. Think about what makes this UNIQUE and MEMORABLE
-5. If you need clarification, state assumptions clearly
-6. Focus on quality over speed
+3. For visual decisions, follow the art direction above; don't substitute your own taste
+4. If you need clarification, state assumptions clearly
+5. Focus on quality over speed
 ```
 
 ## Council Pattern Template
@@ -527,12 +566,12 @@ Assistant flow:
 4. Launch brand agents (sequential council)
 5. Launch creative agents (parallel)
 6. Launch implementation agents
-7. Launch QA agents
+7. Run the design critique loop, then launch QA
 8. Present results, offer next steps
 
 ## Notes
 
-- Total sub-agents: ~11-13 depending on issues found
+- Total sub-agents: ~11-17 depending on critique rounds and QA fixes
 - Estimated time: Varies by complexity
 - The orchestrator should NOT write code or copy - only coordinate
 - Use parallel execution wherever possible for speed
