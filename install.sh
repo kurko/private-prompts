@@ -10,19 +10,29 @@ if [ "$SCRIPT_DIR" != "$TARGET_DIR" ]; then
   exit 1
 fi
 
+SKILL_DIRS=(~/.claude/skills ~/.codex/skills ~/.agents/skills)
+
 # Ensure config directories exist
-mkdir -p ~/.claude/commands ~/.claude/skills ~/.claude/agents
-mkdir -p ~/.codex
+mkdir -p ~/.claude/commands ~/.claude/agents
+mkdir -p "${SKILL_DIRS[@]}"
 
 # Codex CLI config
 ln -nfs "$SCRIPT_DIR/codex-config.toml" ~/.codex/config.toml
 
-# Symlink private commands/skills/agents to Claude config
+# Symlink private commands/agents to Claude config, and skills to Claude,
+# Codex and other Agent Skills-compatible tools
 for f in "$SCRIPT_DIR"/commands/*; do
   [ -e "$f" ] && ln -nfs "$f" ~/.claude/commands/
 done
-for f in "$SCRIPT_DIR"/skills/*; do
-  [ -e "$f" ] && ln -nfs "$f" ~/.claude/skills/
+# Remove links into this repo's skills first, so renamed or deleted skills
+# don't leave stale links behind; the loop below recreates the current ones
+find "${SKILL_DIRS[@]}" -maxdepth 1 -type l -lname "$SCRIPT_DIR/skills/*" -delete
+
+for f in "$SCRIPT_DIR"/skills/*/; do
+  [ -d "$f" ] || continue
+  for dest in "${SKILL_DIRS[@]}"; do
+    ln -nfs "${f%/}" "$dest/"
+  done
 done
 for f in "$SCRIPT_DIR"/agents/*; do
   [ -e "$f" ] && ln -nfs "$f" ~/.claude/agents/
@@ -51,6 +61,6 @@ fi
 
 echo ""
 echo "Private prompts installed at ~/.private-prompts"
-echo "Symlinks created in ~/.claude/{commands,skills,agents}"
+echo "Symlinks created in ~/.claude/{commands,skills,agents}, ~/.codex/skills and ~/.agents/skills"
 echo ""
 echo "If you have public dotfiles, run 'update_dotfiles' to merge them too."
